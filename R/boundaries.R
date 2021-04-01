@@ -13,9 +13,11 @@ library(magrittr)
 #'   should be a matrix, which is the input for stat.func.
 #'   First argument of this function needs to be n, the sample size, and the function
 #'   needs to be vectorized.
-#' @param ... Additional arguments to the `data.generator` function
-#' @example
+#' @param ... Additional arguments to the \code{data.generator} function
+#'
+#' @examples
 #' validate.trial.params(n_k=rep(10, 5), stat.func=mean, data.generator=rnorm)
+#'
 validate.trial.params <- function(n_k, stat.func, data.generator, ...) {
 
   # CHECK FOR STAGES
@@ -38,15 +40,25 @@ validate.trial.params <- function(n_k, stat.func, data.generator, ...) {
              error=function(c) stop(msg),
              warning=function(c) stop(msg))
   }
-
-  print("Validated parameters.")
 }
 
-#' Creates simulations of trial data and calculates test statistic
-#' based on user-defined stat function.
+#' Creates simulations of group sequential trial data and
+#' calculates test statistic based on user-defined stat function.
 #'
-#' @example
-#' create.simulations(100, n_k=c(10, 10, 10),
+#' @export
+#' @param n_sims Number of simulations
+#' @param n_k Sample size per stage
+#' @param stat.func Function (or list of functions)
+#'   to calculate the test statistic based on the generated data, at each
+#'   observed information rates. If this is a list
+#'   of functions, it needs to be the same length as the sequence of boundaries.
+#' @param data.generator Function to generate data. The output of this function
+#'   should be a matrix, which is the input for stat.func.
+#'   First argument of this function needs to be n, the sample size, and the function
+#'   needs to be vectorized.
+#' @param ... Additional arguments to be passed to \code{data.generator}
+#' @examples
+#' create.simulations(10, n_k=c(10, 10, 10),
 #'                    stat.func=list(mean, sum, mean),
 #'                    data.generator=function(n) as.matrix(rnorm(n)))
 create.simulations <- function(n_sims, n_k, stat.func, data.generator, ...){
@@ -64,7 +76,7 @@ create.simulations <- function(n_sims, n_k, stat.func, data.generator, ...){
 
     # Calculate test statistics with a list of test statistic functions
     # and a list of cumulative sample sizes to subset
-    apply.it <- function(f, x) f(data[1:x])
+    apply.it <- function(f, x) f(data[1:x, ])
     t.stats <- mapply(apply.it, f=stat.func, x=n_cuml)
 
     return(t.stats)
@@ -117,32 +129,42 @@ solve.boundary <- function(power, simulations, previous=NULL){
   return(u)
 }
 
-#' Root solve for a particular alpha level, plus some
-#' additional conditions for previous stages.
+#' Derive constant boundaries.
 #'
-#' @param power The type I error (or power geneerally) to solve for
-#' @param simulations Output from create.simulations function.
-#' @param
-
 #' Get the boundaries required for a particular power.
 #' The boundaries are constant across stage, *for a particular stat.func*.
 #'
 #' E.g. if you want Pocock boundaries, you would have a likelihood ratio stat.func
 #' E.g. if you want OBF boundaries, you would have a score statistic stat.func.
 #'
+#' @export
+#' @param power The type I error desired (or power)
+#' @param n Sample size per stage
+#' @param n_sims Number of Monte-Carlo simulations
+#' @param K Total number of stages
+#' @param stat.func Function (or list of functions)
+#'   to calculate the test statistic based on the generated data, at each
+#'   observed information rates. If this is a list
+#'   of functions, it needs to be the same length as the sequence of boundaries.
+#' @param data.generator Function to generate data. The output of this function
+#'   should be a matrix, which is the input for stat.func.
+#'   First argument of this function needs to be n, the sample size, and the function
+#'   needs to be vectorized.
 #'
 #' @examples
+#' set.seed(101)
 #' # replicate Pocock boundaries
 #' get.boundaries(power=0.05, n_sims=1000, K=2, n=100,
 #'                stat.func=function(x) mean(x) * sqrt(length(x)),
 #'                data.generator=function(n) rnorm(n))
 #'
 #' # replicate OBF boundaries
+#' # notice the sqrt(2) in the stat.list
 #' z.stat <- function(x) mean(x) * sqrt(length(x))
 #' stat.list <- list(z.stat, function(...) z.stat(...) * sqrt(2))
 #' get.boundaries(power=0.05, n_sims=1000, K=2, n=100,
 #'                stat.func=stat.list,
-#'                data.generator=function(n) rnorm(n))
+#'                data.generator=function(n) matrix(rnorm(n)))
 get.boundaries <- function(power, n_sims, K, n, stat.func, data.generator, ...){
 
   # Create sample size vector
@@ -160,6 +182,8 @@ get.boundaries <- function(power, n_sims, K, n, stat.func, data.generator, ...){
   return(u)
 }
 
+#' Derive boundaries with alpha-spending.
+#'
 #' Get the boundaries required for a particular alpha-spending function
 #' and an observed information rate out of a total sample size.
 #'
@@ -167,9 +191,11 @@ get.boundaries <- function(power, n_sims, K, n, stat.func, data.generator, ...){
 #' under the null hypothesis in order for this function to work correctly
 #' with alpha-spending.
 #'
-#' @param alpha A continuous, monotonic increasing function
-#'   where alpha(0) = 0 and alpha(1) = a
+#' @export
+#' @param a.func A continuous, monotonic increasing function of t
+#'   where a.func(a, t=0) = 0 and a.func(a, t=1) = a
 #'   where a is the type I error desired
+#' @param a The type I error desired
 #' @param rates A vector of information rates (between 0 and 1)
 #' @param N maximum total sample size
 #' @param n_sims Number of Monte-Carlo simulations
@@ -183,18 +209,23 @@ get.boundaries <- function(power, n_sims, K, n, stat.func, data.generator, ...){
 #'   needs to be vectorized.
 #'
 #' @examples
+#' set.seed(101)
+#' # information rates
+#' t <- 1:3/3
+#'
+#' # approximate Pocock boundaries
 #' a.func.pocock <- function(a, t) a * log(1 + (exp(1) - 1) * t)
-#' t <- 1:2/2
 #' get.boundaries.aspend(a.func=a.func.pocock, a=0.05,
 #'                       rates=t, N=1000, n_sims=1000,
 #'                       stat.func=function(x) mean(x) * sqrt(length(x)),
-#'                       data.generator=function(n) rnorm(n))
+#'                       data.generator=function(n) matrix(rnorm(n)))
 #'
+#' # approximate O'Brien-Fleming boundaries
 #' a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
 #' get.boundaries.aspend(a.func=a.func.obf, a=0.05,
 #'                       rates=t, N=1000, n_sims=1000,
 #'                       stat.func=function(x) mean(x) * sqrt(length(x)),
-#'                       data.generator=function(n) rnorm(n))
+#'                       data.generator=function(n) matrix(rnorm(n)))
 get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
                                   stat.func, data.generator, ...){
 

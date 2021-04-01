@@ -1,0 +1,15 @@
+template:
+  params:
+    bootswatch: sandstone
+reference:
+- title: "Simulating datasets"
+  desc: >
+    Functions for simulating group sequential trial datasets.
+- contents:
+  - create.simulations
+- title: "Compute boundaries"
+  desc: >
+    Functions to compute rejection boundaries
+- contents:
+  - get.boundaries
+  - get.boundaries.aspend

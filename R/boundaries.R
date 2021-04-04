@@ -156,7 +156,7 @@ solve.boundary <- function(power, simulations, previous=NULL){
 #' # replicate Pocock boundaries
 #' get.boundaries(power=0.05, n_sims=1000, K=2, n=100,
 #'                stat.func=function(x) mean(x) * sqrt(length(x)),
-#'                data.generator=function(n) rnorm(n))
+#'                data.generator=function(n) matrix(rnorm(n)))
 #'
 #' # replicate OBF boundaries
 #' # notice the sqrt(2) in the stat.list
@@ -169,7 +169,6 @@ get.boundaries <- function(power, n_sims, K, n, stat.func, data.generator, ...){
 
   # Create sample size vector
   n_k <- rep(n, K)
-
   # Validate parameters
   validate.trial.params(n_k, stat.func, data.generator, ...)
 

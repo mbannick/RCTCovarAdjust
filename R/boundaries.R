@@ -224,14 +224,18 @@ get.boundaries <- function(power, n_sims, K, n, stat.func, data.generator, ...){
 #' get.boundaries.aspend(a.func=a.func.obf, a=0.05,
 #'                       rates=t, N=1000, n_sims=1000,
 #'                       stat.func=function(x) mean(x) * sqrt(length(x)),
+#'                       u_k=c(3.35, 2.47),
 #'                       data.generator=function(n) matrix(rnorm(n)))
 get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
-                                  stat.func, data.generator, ...){
+                                  stat.func, data.generator, u_k=c(), ...){
 
   # Get sample size increments
   K <- length(rates)
   n_k <- round(rates*N)
   n_k <- c(n_k[1], diff(n_k))
+
+  # Number of *fixed* previous bounds
+  K_prev <- length(u_k)
 
   # Validate parameters
   validate.trial.params(n_k, stat.func, data.generator, ...)
@@ -253,12 +257,17 @@ get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
   bounds <- c()
   previous <- rep(TRUE, n_sims)
 
-  # For each stage, solve for the boundary
+  # For each stage, solve for the boundary, unless
+  # you passed in fixed boundaries
   for(i in 1:K){
     sim <- simulations[, i] %>% as.matrix
-    bound <- solve.boundary(power=a.diff[i],
-                            simulations=sim,
-                            previous=previous)
+    if(i > K_prev){
+      bound <- solve.boundary(power=a.diff[i],
+                              simulations=sim,
+                              previous=previous)
+    } else {
+      bound <- u_k[i]
+    }
 
     # Update the previously rejected vector
     # with information from this stage

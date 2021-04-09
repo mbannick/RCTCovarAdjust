@@ -1,0 +1,162 @@
+---
+title: "Alpha Spending"
+author: "Marlena Bannick"
+date: "4/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(magrittr)
+library(data.table)
+source("./R/ancova.R")
+source("./R/trial-data.R")
+source("./R/boundaries.R")
+
+set.seed(10)
+```
+
+```{r}
+# The information fractions
+t_k <- 1:5/5
+
+# The covariate fractions (fraction of subjects that have covariate information).
+# 
+# This is a general feature to use later when we start combining
+# ANCOVA and ANOVA estimates for one stage.
+p_k <- (1:5/5)**2
+```
+
+```{r}
+# This is an example dataset, to see what form of the data we are
+# expecting.
+df <- sim.ancova.partial(t_k, p_k, N=100,
+                         delta=1, theta=1, gamma=c(0.5, 2),
+                         sigma2=1, b0=0)
+```
+
+```{r}
+head(df)
+tail(df)
+```
+
+```{r}
+# TEST STATISTIC FUNCTIONS
+# Also, they return estimates of \gamma, if ANCOVA is being performed
+fit.trial.data <- function(data, ancova=FALSE){
+
+  data <- as.matrix(data)
+  columns <- colnames(data)
+
+  out.col <- which(columns == "y")
+  t.col <- which(columns == "t")
+  var.cols <- which(columns == "int")
+
+  if(ancova){
+    cov.cols <- which(grepl("cov_", columns))
+    var.cols <- c(var.cols, cov.cols)
+  }
+
+  mod <- fit.regression(data=data, out.col=out.col,
+                        t.col=t.col, var.cols=var.cols)
+  return(mod)
+}
+
+test.stat <- function(data, ancova=FALSE){
+  mod <- fit.trial.data(data, ancova)
+  return(mod$tstat)
+}
+
+t.anova <- function(data) test.stat(data, ancova=FALSE)
+t.ancova <- function(data) test.stat(data, ancova=TRUE)
+```
+
+```{r}
+#' This function gets the critical value for the current stage
+#' based on previous bounds and an alpha-spending function. It:
+#'
+#' (1) Creates a list of test statistics, where if ANCOVA is
+#' true, it has ANCOVA performed at the `stage` argument.
+#' 
+#' (2) Subsets the data to only the current stage, and fits
+#' an ANCOVA model, if `ANCOVA == TRUE`. Otherwise it does nothing.
+#' 
+#' (3) Creates a data generator based on the estimated parameters
+#' of the ANCOVA model, and other parameters under the null hypothesis.
+#' (and \beta_0 doesn't really matter).
+#'
+#' (4) Calculates the boundary for stage `stage` based on the previous
+#' boundaries, and re-simulated data for previous stages based on the
+#' data generator.
+fit.stage <- function(data, stage, bounds, ancova=TRUE, ...){
+
+  # Get covariate columns
+  columns <- colnames(data)
+  cov.cols <- columns[grepl("cov_", columns)]
+
+  # Create list of test statistic functions
+  t.stats <- list()
+  for(i in 1:(stage-1)) t.stats[[i]] <- t.anova
+
+  d.gens <- list()
+
+  stage.df <- as.matrix(data[look == stage])
+
+  if(ancova){
+
+    # If doing ANCOVA at this stage, first estimate the
+    # gamma and theta parameters and then simulate previous
+    # trial data to be used to assess the boundaries.
+    t.stats[[stage]] <- t.ancova
+    model <- fit.trial.data(data=stage.df, ancova=TRUE)
+    gamma <- model$bhat[cov.cols, ] %>% c
+    theta <- apply(stage.df[, cov.cols], MARGIN=2, FUN=sd)
+    sigma2 <- model$shat
+    data.generator <- function(n) sim.ancova(n=n, delta=0, b0=0, theta=theta,
+                                             gamma=gamma, sigma2=sigma2)
+
+  } else {
+
+    t.stats[[stage]] <- t.anova
+    model <- fit.trial.data(data=stage.df, ancova=FALSE)
+    sigma2 <- model$shat
+    data.generator <- function(n) sim.ancova(n=n, delta=0, b0=0, theta=1,
+                                             gamma=rep(0, length(cov.cols)),
+                                             sigma2=sigma2)
+  }
+
+  bounds <- get.boundaries.aspend(stat.func=t.stats,
+                                  u_k=bounds,
+                                  data.generator=data.generator, ...)
+
+  return(bounds)
+}
+```
+
+
+```{r}
+# A TOY EXAMPLE
+a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
+fit.stage(df, stage=5, bounds=c(2, 2, 2, 2), ancova=TRUE,
+          a.func=a.func.obf, a=0.05,
+          rates=t_k, N=1000, n_sims=1000)
+```
+
+```{r}
+# if we did the trial from start to finish, we would have something like
+# this...
+
+bounds <- c()
+for(i in 1:5){
+  
+  ancova <- i == 5
+  bounds <- fit.stage(df, stage=5, bounds=bounds, ancova=ancova,
+          a.func=a.func.obf, a=0.05,
+          rates=t_k, N=100, n_sims=1000)
+}
+
+bounds
+```

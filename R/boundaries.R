@@ -1,4 +1,3 @@
-rm(list=ls())
 library(magrittr)
 
 #' Validate parameters to use in the type I error functions.

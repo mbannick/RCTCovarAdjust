@@ -1,6 +1,24 @@
 library(magrittr)
 library(data.table)
 
+#' Generate basic information fraction covariance matrix
+#'
+#' @example
+#' basic.cov(c(10, 10, 10))
+basic.cov <- function(n_k){
+
+  K <- length(n_k)
+  n_cuml <- cumsum(n_k)
+
+  Sigma <- matrix(NA, nrow=K, ncol=K)
+  for(i in 1:K){
+    for(j in 1:K){
+      Sigma[i, j] <- sqrt(min(n_cuml[i], n_cuml[j])/max(n_cuml[i], n_cuml[j]))
+    }
+  }
+  return(Sigma)
+}
+
 #' THESE ARE FUNCTIONS TO FACILITATE
 #' THE HYPOTHESIS TESTING IN AN ONGOING
 #' TRIAL WITH ALPHA SPENDING

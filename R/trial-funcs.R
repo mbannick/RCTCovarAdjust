@@ -27,13 +27,14 @@ fit.trial.data <- function(data, ancova=FALSE){
   return(mod)
 }
 
-test.stat <- function(data, ancova=FALSE){
-  mod <- fit.trial.data(data, ancova)
-  return(mod$tstat)
-}
+ancova.stats <- function(n_sims, n_k, ){
 
-t.anova <- function(data) test.stat(data, ancova=FALSE)
-t.ancova <- function(data) test.stat(data, ancova=TRUE)
+  Sigma <- basic.cov(n_k)
+  sims <- mvrnorm(n=n_sims, mu=rep(0, length(n_k)),
+                   Sigma=basic.cov(n_k))
+
+  return(sims)
+}
 
 fit.stage <- function(data, stage, bounds, ancova=TRUE, ...){
 
@@ -41,43 +42,48 @@ fit.stage <- function(data, stage, bounds, ancova=TRUE, ...){
   columns <- colnames(data)
   cov.cols <- columns[grepl("cov_", columns)]
 
-  # Create list of test statistic functions
-  t.stats <- list()
-  for(i in 1:(stage-1)) t.stats[[i]] <- t.anova
-
-  d.gens <- list()
-
+  # Get the covariance matrix for the sim.generator function
   stage.df <- as.matrix(data[look == stage])
 
   if(ancova){
 
     # If doing ANCOVA at this stage, first estimate the
     # gamma and theta parameters and then simulate previous
-    # trial data to be used to assess the boundaries.
-    t.stats[[stage]] <- t.ancova
+    # trial data to be used to assess the boundaries
     model <- fit.trial.data(data=stage.df, ancova=TRUE)
     gamma <- model$bhat[cov.cols, ] %>% c
     theta <- apply(stage.df[, cov.cols], MARGIN=2, FUN=sd)
     sigma2 <- model$shat
-    data.generator <- function(n) sim.ancova(n=n, delta=0, b0=0, theta=theta,
-                                             gamma=gamma, sigma2=sigma2)
+
+    # data.generator <- function(n) sim.ancova(n=n, delta=0, b0=0, theta=theta,
+    #                                          gamma=gamma, sigma2=sigma2)
+    sim.generator <- ancova.stats
 
   } else {
 
-    t.stats[[stage]] <- t.anova
-    data.generator <- function(n) sim.ancova(n=n, delta=0, b0=0, theta=theta,
-                                             gamma=rep(0, length(cov.cols)))
+    # data.generator <- function(n) sim.ancova(n=n, delta=0, b0=0, theta=theta,
+    #                                          gamma=rep(0, length(cov.cols)))
+    sim.generator <- ancova.stats
   }
 
-  bounds <- get.boundaries.aspend(stat.func=t.stats,
-                                  u_k=bounds,
-                                  data.generator=data.generator, ...)
+  bounds <- get.boundaries.aspend(u_k=bounds,
+                                  sim.generator=sim.generator, ...)
 
   return(bounds)
 }
-
 
 a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
 fit.stage(df, stage=5, bounds=c(2, 2, 2, 2), ancova=TRUE,
           a.func=a.func.obf, a=0.05,
           rates=t_k, N=1000, n_sims=1000)
+
+bounds <- c()
+for(i in 1:5){
+
+  ancova <- i == 5
+  bounds <- fit.stage(df, stage=5, bounds=bounds, ancova=ancova,
+                      a.func=a.func.obf, a=0.05,
+                      rates=t_k, N=1000, n_sims=100000)
+}
+
+bounds

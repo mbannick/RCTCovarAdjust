@@ -154,8 +154,8 @@ for(i in 1:5){
   
   ancova <- i == 5
   bounds <- fit.stage(df, stage=5, bounds=bounds, ancova=ancova,
-          a.func=a.func.obf, a=0.05,
-          rates=t_k, N=1000, n_sims=10000)
+                      a.func=a.func.obf, a=0.05,
+                      rates=t_k, N=1000, n_sims=10000)
 }
 
 bounds

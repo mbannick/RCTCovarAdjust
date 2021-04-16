@@ -58,7 +58,7 @@ fit.stage <- function(data, stage, bounds, ancova=TRUE, estimate_sigma=TRUE, ...
     # trial data to be used to assess the boundaries
     model <- fit.trial.data(data=stage.df, ancova=TRUE)
     gamma <- model$bhat[cov.cols, ]
-    theta <- apply(stage.df[, cov.cols], MARGIN=2, FUN=sd)
+    theta <- apply(matrix(stage.df[, cov.cols]), MARGIN=2, FUN=sd)
     if(estimate_sigma){
       sigma2 <- model$shat
     } else {
@@ -88,26 +88,6 @@ fit.stage <- function(data, stage, bounds, ancova=TRUE, estimate_sigma=TRUE, ...
 
   bounds <- get.boundaries.aspend(u_k=bounds,
                                   sim.generator=sim.generator, ...)
-
-  return(bounds)
-}
-
-run.full.trial <- function(theta, gamma, estimate_sigma=TRUE, do_ancova=TRUE) {
-  df <- sim.ancova.partial(t_k, p_k, N=1000,
-                           delta=1, theta=theta, gamma=gamma,
-                           sigma2=1, b0=0)
-
-  cat(".")
-  bounds <- c()
-  for(i in 1:5){
-
-    ancova <- i == 5
-    ancova <- ancova & do_ancova
-    bounds <- fit.stage(df, stage=5, bounds=bounds, ancova=ancova,
-                        estimate_sigma=estimate_sigma,
-                        a.func=a.func.obf, a=0.05,
-                        rates=t_k, N=1000, n_sims=100)
-  }
 
   return(bounds)
 }

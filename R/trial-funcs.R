@@ -25,20 +25,24 @@ ancova.stats <- function(n_sims, n_k, gamma, theta, sigma2, ancova=TRUE){
   K <- length(n_k)
   co.var <- sqrt(sigma2) / sqrt(sigma2 + (gamma %*% theta)**2)
   Sigma <- basic.cov(n_k)
-
   if(ancova){
-    for(i in 1:K){
-      for(j in 1:K){
-        if(i >= j) next
-        Sigma[i, j] <- Sigma[i, j] * co.var
-        Sigma[j, i] <- Sigma[j, i] * co.var
-      }
-    }
-    print(Sigma)
+    Sigma[K, 1:(K-1)] <- Sigma[K, 1:(K-1)] * c(co.var)
+    Sigma[1:(K-1), K] <- Sigma[1:(K-1), K] * c(co.var)
+
+    # for(i in 1:K){
+    #   for(j in 1:K){
+    #     if(i >= j) next
+    #     if(i == K){
+    #       Sigma[i, j] <- Sigma[i, j] * co.var
+    #       Sigma[j, i] <- Sigma[j, i] * co.var
+    #     }
+    #   }
+    # }
   }
+  print(Sigma)
   sims <- mvrnorm(n=n_sims, mu=rep(0, length(n_k)),
                   Sigma=Sigma)
-  if(ancova) print(sims[1:10,])
+  # if(ancova) print(sims[1:10,])
 
   return(sims)
 }

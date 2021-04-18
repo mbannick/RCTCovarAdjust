@@ -120,7 +120,6 @@ get.boundaries <- function(power, n_sims, K, n, sim.generator, ...){
 #'                       u_k=c(3.471, 2.454))
 get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
                                   u_k=c(), sim.generator, ...){
-
   # Get sample size increments
   K <- length(rates)
   n_k <- round(rates*N)
@@ -130,6 +129,7 @@ get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
   K_prev <- length(u_k)
 
   # Create the simulations
+  set.seed(10)
   simulations <- sim.generator(n_sims=n_sims, n_k=n_k, ...)
 
   # Create alpha spending function
@@ -140,7 +140,7 @@ get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
   a.diff <- a.spend(rates) %>% diff
 
   # Create a "previous" vector that we will use to
-  # indicate having not rejected at previous stages
+  # indicate having *not* rejected at previous stages
   bounds <- c()
   previous <- rep(TRUE, n_sims)
 
@@ -149,6 +149,7 @@ get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
   for(i in 1:K){
     sim <- simulations[, i] %>% as.matrix
     if(i > K_prev){
+      # if(i == 5) browser()
       bound <- solve.boundary(power=a.diff[i],
                               simulations=sim,
                               previous=previous)

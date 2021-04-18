@@ -1,0 +1,43 @@
+rm(list=ls())
+source("R/trial-funcs.R")
+source("R/ancova.R")
+source("R/boundaries.R")
+source("R/trial-data.R")
+
+K <- 2
+
+t_k <- 1:K/K
+
+a.func.poc <- function(a, t) a * log(1 + (exp(1) - 1) * t)
+a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
+
+run.full.trial <- function(theta, gamma,
+                           N, n_sims, a.func,
+                           estimate_sigma=TRUE, do_ancova=TRUE) {
+
+  df <- sim.ancova.partial(t_k, p_k, N=N,
+                           delta=1, theta=theta, gamma=gamma,
+                           sigma2=1, b0=0)
+
+  cat(".")
+  bounds <- c()
+  for(i in 1:K){
+
+    ancova <- i == K
+    ancova <- ancova & do_ancova
+    bounds <- fit.stage(df, stage=i, bounds=bounds, ancova=ancova,
+                        estimate_sigma=estimate_sigma,
+                        a.func=a.func, a=0.05,
+                        rates=t_k[1:i], N=N, n_sims=n_sims)
+  }
+
+  return(bounds)
+}
+
+set.seed(10)
+trial <- run.full.trial(gamma=c(6), theta=c(1),
+                        estimate_sigma=FALSE,
+                        do_ancova=FALSE,
+                        N=200,
+                        n_sims=10000,
+                        a.func=a.func.obf)

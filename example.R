@@ -35,15 +35,15 @@ run.full.trial <- function(theta, gamma,
     bounds <- fit.stage(df, stage=i, bounds=bounds, ancova=ancova,
                         estimate_sigma=estimate_sigma,
                         a.func=a.func, a=0.05,
-                        rates=t_k, N=N, n_sims=n_sims)
+                        rates=t_k[1:i], N=N, n_sims=n_sims)
   }
 
   return(bounds)
 }
 
-n_sims <- c(100000)
-N <- c(1000, 10000)
-gamma <- c(1, 10)
+n_sims <- c(10000)
+N <- c(1000)
+gamma <- c(0.5, 1, 5)
 theta <- c(1)
 
 params <- expand.grid(n_sims=n_sims, N=N, gamma=gamma, theta=theta)
@@ -56,13 +56,13 @@ for(i in 1:nrow(params)){
   print(parm)
   set.seed(10)
   reps.anova <- replicate(5, run.full.trial(gamma=c(parm$gamma), theta=c(parm$theta),
-                                             estimate_sigma=FALSE,
+                                             estimate_sigma=TRUE,
                                              do_ancova=FALSE, N=parm$N, n_sims=parm$n_sims,
                                              a.func=a.func.obf))
   res.anova[[i]] <- reps.anova
   set.seed(10)
   reps.ancova <- replicate(5, run.full.trial(gamma=c(parm$gamma), theta=c(parm$theta),
-                                             estimate_sigma=FALSE,
+                                             estimate_sigma=TRUE,
                                              do_ancova=TRUE, N=parm$N, n_sims=parm$n_sims,
                                              a.func=a.func.obf))
   res.ancova[[i]] <- reps.ancova

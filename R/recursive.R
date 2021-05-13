@@ -1,14 +1,10 @@
 # CUTOFFS ON THE LIKELIHOOD RATIO SCALE
 rm(list=ls())
 
+# SETUP --------------------------------
+
 OBF <- FALSE
 K <- 4
-#
-# LOWER <- -10
-# UPPER <- 10
-# L.OUT <- 10000
-# GRID <- seq(LOWER, UPPER, length.out=L.OUT)
-# DELTA <- (UPPER - LOWER) / L.OUT # grid resolution
 
 # OBrien and Fleming Critical Value Constants
 bound_obf <- c(1.9600, 2.7965, 3.4711, 4.0486, 4.5617,
@@ -20,41 +16,16 @@ bound_poc <- c(1.9600, 2.1783, 2.2895, 2.3613, 2.4132,
                2.4532, 2.4855, 2.5123, 2.5352, 2.5550,
                2.5724, 2.5880, 2.6019, 2.6146, 2.6261)
 
-# Compute the critical values
+# COMPUTE CRITICAL VALUES
 if(OBF){
   u_k <- bound_obf[K] / sqrt(1:K)
 } else {
   u_k <- bound_poc[K] / rep(1, K)
 }
 
-# INFORMATION FRACTIONS
+# HELPER FUNCTIONS --------------------------
 
-n <- rep(100, K)
-tau <- n / n[1]
-tau_s <- cumsum(tau)
-
-# CUTOFFS ON THE SCORE SCALE
-
-# u_ks <- u_k * sqrt(tau_s)
-
-# CREATE CONTINUATION INDICES
-#
-# c_k <- sapply(u_ks, function(x) abs(grid_x) <= x)
-# r_k <- sapply(u_ks, function(x) abs(grid_x) > x)
-#
-# f1 <- dnorm(grid_x)
-#
-# f1.R <- f1
-# f1.R[which(c_k[, 1])] <- 0
-# f1.C <- f1
-# f1.C[which(r_k[, 1])] <- 0
-#
-# par(mfrow=c(1, 2))
-# plot(f1.R ~ grid_x, type='l')
-# plot(f1.C ~ grid_x, type='l')
-
-# f2 <- dnorm(grid_x, sd=sqrt(tau[2]))
-
+# CONVOLUTION FUNCTION
 conv <- function(f1, f2, grid, delta){
   flip <- convolve(f1, f2) * delta
   f.new <- flip[
@@ -64,15 +35,13 @@ conv <- function(f1, f2, grid, delta){
   return(f.new)
 }
 
-# f12 <- convolve.2(f1.C, f2, grid_x)
-# f12.C <- f1
-
-
+# GET THE INFORMATION FRACTION FUNCTION TAU
 get.tau <- function(n_k){
   tau <- n_k / n_k[1]
   return(tau)
 }
 
+# CONVERT BOUNDS TO THE SCORE SCALE
 convert.bounds <- function(bounds, n_k){
   tau <- get.tau(n_k)
   tau_s <- cumsum(tau)
@@ -80,6 +49,8 @@ convert.bounds <- function(bounds, n_k){
   return(bounds)
 }
 
+# MAIN FUNC -- GET THE JOINT DENSITY OF THE STATISTICS
+# AND THE REJECTION STAGE
 get.joint.density <- function(n_k, lr_bounds,
                               lower=-10, upper=10, gridsize=1e5){
 
@@ -157,6 +128,8 @@ get.joint.density <- function(n_k, lr_bounds,
   }
   return(densities)
 }
+
+# TEST IT OUT -------------------------------
 
 # THIS IS ACCURATE PROPORTIONALLY TO THE GRIDSIZE
 dens <- get.joint.density(n_k=c(20, 30, 40, 20), lr_bounds=u_k,

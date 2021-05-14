@@ -51,7 +51,7 @@ convert.bounds <- function(bounds, n_k){
 
 # MAIN FUNC -- GET THE JOINT DENSITY OF THE STATISTICS
 # AND THE REJECTION STAGE
-get.joint.density <- function(n_k, lr_bounds,
+get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
                               lower=-10, upper=10, gridsize=1e5){
 
   # QUALITY CHECK
@@ -70,7 +70,7 @@ get.joint.density <- function(n_k, lr_bounds,
 
   # CREATE GRID FOR DENSITIES
   grid <- seq(lower, upper, length.out=gridsize)
-  delta <- (upper - lower) / gridsize
+  dx <- (upper - lower) / gridsize
 
   # DEFINE CONTINUATION AND REJECTION REGIONS
   con <- sapply(s_bounds, function(x) abs(grid) <= x)
@@ -90,8 +90,11 @@ get.joint.density <- function(n_k, lr_bounds,
     return(list(R=f.R, C=f.C))
   }
 
+  # GET THE EFFECT SIZE
+  get.eff <- function(i) delta * sqrt(n_k[1]) * sum(tau[1:i])
+
   # DO THE FIRST DENSITY
-  f1 <- dnorm(grid)
+  f1 <- dnorm(grid, mean=get.eff(1))
   f1 <- get.truncations(i=1, f=f1)
   densities[, 1] <- f1$R
 
@@ -99,12 +102,25 @@ get.joint.density <- function(n_k, lr_bounds,
   # OF THE FIRST DENSITY -- TO START THE CONVOLUTION
   f.prev <- f1$C
 
+  # FUNCTION TO GET THE VARIANCE OF THE INCREMENT
+  # WHICH IS USUALLY JUST TAU_K BUT IF RHO != 1, WHICH WOULD MEAN
+  # THAT THERE IS A PROGNOSTIC COVARIATE, AND IF ANCOVA IS BEING
+  # PERFORMED AT THE LAST STAGE, THEN IT'S INFLATED
+  get.rho.inflation <- function(i) 2 * (1 - rho) * sum(tau[1:(i-1)])
+
   for(i in 2:K){
-    fi <- dnorm(grid, sd=sqrt(tau[i]))
+
+    # COMPUTE VARIANCE
+    v <- tau[i]
+    if(i ==  K) v <- v + get.rho.inflation(i)
+
+    # SPECIFY THE DENSITY
+    m <- get.eff(i) - get.eff(i-1)
+    fi <- dnorm(grid, mean=m, sd=sqrt(v))
 
     # GET THE CONVOLUTION WITH THE PREVIOUS INCREMENTS
     # AND THE INDEPENDENT INCREMENT
-    fi.cuml <- conv(f.prev, fi, grid=grid, delta=delta)
+    fi.cuml <- conv(f.prev, fi, grid=grid, delta=dx)
 
     if(i == K){
 
@@ -131,7 +147,30 @@ get.joint.density <- function(n_k, lr_bounds,
 
 # TEST IT OUT -------------------------------
 
+n_k <- ceiling(runif(K, 50, 100))
+s_bounds <- convert.bounds(u_k, n_k)
+
 # THIS IS ACCURATE PROPORTIONALLY TO THE GRIDSIZE
-dens <- get.joint.density(n_k=c(20, 30, 40, 20), lr_bounds=u_k,
+dens <- get.joint.density(n_k=n_k, lr_bounds=u_k,
                           gridsize=1e5)
 sum(dens) * 2e-4
+
+dens.ancova <- get.joint.density(n_k=n_k, lr_bounds=u_k, rho=0.5,
+                                 gridsize=1e5)
+sum(dens) * 2e-4
+
+# CHECK FOR TYPE 1 ERROR
+
+grid <- seq(-10, 10, length.out=1e5)
+reject <- sapply(s_bounds, function(x) abs(grid) > x)
+sum(reject * dens) * 2e-4
+sum(reject * dens.ancova) * 2e-4 # type 1 error inflated
+
+# WHAT HAPPENS IF WE CHANGE THE EFFECT SIZE
+# THIS SHOULD BE A MUCH LARGER PROBABILITY OF REJECTION!
+dens.d <- get.joint.density(n_k=n_k, lr_bounds=u_k, delta=0.2,
+                          gridsize=1e5)
+sum(reject * dens.d) * 2e-4
+
+# NOTE: IF DELTA GETS TOO LARGE, YOU NEED TO CHANGE THE UPPER AND LOWER
+# GRID FOR X, BECAUSE THEN YOU RUN OUT OF ROOM IN THE GRID!

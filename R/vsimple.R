@@ -5,7 +5,7 @@ source("R/boundaries.R")
 source("R/trial-data.R")
 library(ggplot2)
 
-try.trial <- function(K, gamma){
+try.trial <- function(K, gamma, new=FALSE){
 
   t_k <- 1:K/K
   p_k <- t_k
@@ -20,7 +20,7 @@ try.trial <- function(K, gamma){
 
   run.full.trial <- function(theta, gamma,
                              N, n_sims, a.func,
-                             estimate_sigma=TRUE, do_ancova=TRUE) {
+                             estimate_sigma=TRUE, do_ancova=TRUE, new=FALSE) {
 
     df <- sim.ancova.partial(t_k, p_k, N=N,
                              delta=1, theta=theta, gamma=gamma,
@@ -35,7 +35,7 @@ try.trial <- function(K, gamma){
       bounds <- fit.stage(df, stage=i, bounds=bounds, ancova=ancova,
                           estimate_sigma=estimate_sigma,
                           a.func=a.func, a=0.05,
-                          rates=t_k[1:i], N=N, n_sims=n_sims)
+                          rates=t_k[1:i], N=N, n_sims=n_sims, new=new)
     }
 
     return(bounds)
@@ -47,17 +47,20 @@ try.trial <- function(K, gamma){
                           do_ancova=FALSE,
                           N=1000,
                           n_sims=100000,
-                          a.func=a.func.obf)
+                          a.func=a.func.obf, new=new)
   trial.2 <- run.full.trial(gamma=c(gamma), theta=c(1),
                           estimate_sigma=TRUE,
                           do_ancova=TRUE,
                           N=1000,
                           n_sims=100000,
-                          a.func=a.func.obf)
+                          a.func=a.func.obf, new=new)
   print(bound_obf)
   print(trial)
   return(cbind(trial, trial.2))
 }
+
+t1 <- try.trial(4, gamma=1.5)
+t2 <- try.trial(4, gamma=1.5, new=TRUE)
 
 TRIALS.1 <- sapply(2:5, try.trial, gamma=0.1)
 TRIALS.2 <- sapply(2:5, try.trial, gamma=0.5)

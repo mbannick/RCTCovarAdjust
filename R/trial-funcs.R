@@ -34,7 +34,9 @@ ancova.stats <- function(n_sims, n_k, gamma, theta, sigma2, ancova=TRUE){
   return(sims)
 }
 
-fit.stage <- function(data, stage, bounds, ancova=TRUE, estimate_sigma=TRUE, ...){
+fit.stage <- function(data, stage, bounds, ancova=TRUE, estimate_sigma=TRUE, new=FALSE,
+                      a.func=a.func,
+                      a=a, rates=rates, N=N, n_sims=n_sims){
   # Get covariate columns
   columns <- colnames(data)
   cov.cols <- columns[grepl("cov_", columns)]
@@ -77,8 +79,19 @@ fit.stage <- function(data, stage, bounds, ancova=TRUE, estimate_sigma=TRUE, ...
                                                         ancova=FALSE)
   }
 
-  bounds <- get.boundaries.aspend(u_k=bounds,
-                                  sim.generator=sim.generator, ...)
+  if(new){
+    if(ancova){
+      rho <- sigma2**0.5 / sqrt(sigma2 + (gamma*theta)**2)
+    } else {
+      rho <- 1
+    }
+    bounds <- get.boundaries.aspend2(u_k=bounds, rho=rho, a.func=a.func,
+                                     a=a, rates=rates, N=N)
+  } else {
+    bounds <- get.boundaries.aspend(u_k=bounds,
+                                    sim.generator=sim.generator, a.func=a.func,
+                                    a=a, rates=rates, N=N, n_sims=n_sims)
+  }
 
   return(bounds)
 }

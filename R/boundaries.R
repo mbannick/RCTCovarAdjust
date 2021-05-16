@@ -1,5 +1,7 @@
 library(magrittr)
 library(MASS)
+source("R/trial-data.R")
+source("R/trial-funcs.R")
 
 #' Calculate the type I error based on a sequence of boundaries.
 #' Inputs include (1) trial parameters, (2) data generating procedure parameters,
@@ -111,12 +113,17 @@ get.boundaries <- function(power, n_sims, K, n, sim.generator, ...){
 #' get.boundaries.aspend(a.func=a.func.pocock, a=0.05,
 #'                       rates=t, N=1000, n_sims=100000,
 #'                       sim.generator=sim.generator)
+#' get.boundaries.aspend2(a.func=a.func.pocock, a=0.05,
+#'                       rates=t, N=1000)
 #'
 #' # approximate O'Brien-Fleming boundaries
 #' a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
 #' get.boundaries.aspend(a.func=a.func.obf, a=0.05,
 #'                       rates=t, N=100000, n_sims=10000,
 #'                       sim.generator=sim.generator,
+#'                       u_k=c(3.471, 2.454))
+#' get.boundaries.aspend2(a.func=a.func.obf, a=0.05,
+#'                       rates=t, N=100000,
 #'                       u_k=c(3.471, 2.454))
 get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
                                   u_k=c(), sim.generator, ...){
@@ -129,7 +136,7 @@ get.boundaries.aspend <- function(a.func, a, rates, N, n_sims,
   K_prev <- length(u_k)
 
   # Create the simulations
-  set.seed(10)
+  # set.seed(10)
   simulations <- sim.generator(n_sims=n_sims, n_k=n_k, ...)
 
   # Create alpha spending function

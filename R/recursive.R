@@ -3,8 +3,8 @@ rm(list=ls())
 
 # SETUP --------------------------------
 
-OBF <- FALSE
-K <- 4
+OBF <- TRUE
+K <- 5
 
 # OBrien and Fleming Critical Value Constants
 bound_obf <- c(1.9600, 2.7965, 3.4711, 4.0486, 4.5617,
@@ -55,7 +55,7 @@ get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
                               lower=-10, upper=10, gridsize=1e5){
 
   # QUALITY CHECK
-  if(length(n_k) != length(lr_bounds)) stop("Different lengths for sample
+  if(length(n_k)-1 != length(lr_bounds)) stop("Different lengths for sample
                                             size and critical boundaries.")
 
   # NUMBER OF STAGES
@@ -64,17 +64,18 @@ get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
   # GET THE INFORMATION FRACTION
   tau <- get.tau(n_k)
 
-  # CONVERT LIKELIHOOD RATIO SCALE BOUNDS
-  # TO SCORE STATISTIC BOUNDS
-  s_bounds <- convert.bounds(lr_bounds, n_k)
-
   # CREATE GRID FOR DENSITIES
   grid <- seq(lower, upper, length.out=gridsize)
   dx <- (upper - lower) / gridsize
 
-  # DEFINE CONTINUATION AND REJECTION REGIONS
-  con <- sapply(s_bounds, function(x) abs(grid) <= x)
-  rej <- sapply(s_bounds, function(x) abs(grid) > x)
+  # CONVERT LIKELIHOOD RATIO SCALE BOUNDS
+  # TO SCORE STATISTIC BOUNDS AND DEFINE CONTINUATION
+  # AND REJECTION REGIONS
+  if(K > 1){
+    s_bounds <- convert.bounds(lr_bounds, n_k[1:(K-1)])
+    con <- sapply(s_bounds, function(x) abs(grid) <= x)
+    rej <- sapply(s_bounds, function(x) abs(grid) > x)
+  }
 
   # PLACEHOLDER FOR THE MATRIX OF DENSITIES FOR EACH
   # STAGE
@@ -95,82 +96,106 @@ get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
 
   # DO THE FIRST DENSITY
   f1 <- dnorm(grid, mean=get.eff(1))
-  f1 <- get.truncations(i=1, f=f1)
-  densities[, 1] <- f1$R
+  if(K == 1){
+    densities[, 1] <- f1
+  } else {
+    f1 <- get.truncations(i=1, f=f1)
+    densities[, 1] <- f1$R
 
-  # FILL THE PREVIOUS DENSITY WITH THE CONTINUATION
-  # OF THE FIRST DENSITY -- TO START THE CONVOLUTION
-  f.prev <- f1$C
+    # FILL THE PREVIOUS DENSITY WITH THE CONTINUATION
+    # OF THE FIRST DENSITY -- TO START THE CONVOLUTION
+    f.prev <- f1$C
 
-  # FUNCTION TO GET THE VARIANCE OF THE INCREMENT
-  # WHICH IS USUALLY JUST TAU_K BUT IF RHO != 1, WHICH WOULD MEAN
-  # THAT THERE IS A PROGNOSTIC COVARIATE, AND IF ANCOVA IS BEING
-  # PERFORMED AT THE LAST STAGE, THEN IT'S INFLATED
-  get.rho.inflation <- function(i) 2 * (1 - rho) * sum(tau[1:(i-1)])
+    # FUNCTION TO GET THE VARIANCE OF THE INCREMENT
+    # WHICH IS USUALLY JUST TAU_K BUT IF RHO != 1, WHICH WOULD MEAN
+    # THAT THERE IS A PROGNOSTIC COVARIATE, AND IF ANCOVA IS BEING
+    # PERFORMED AT THE LAST STAGE, THEN IT'S INFLATED
+    get.rho.inflation <- function(i) 2 * (1 - rho) * sum(tau[1:(i-1)])
 
-  for(i in 2:K){
+    for(i in 2:K){
 
-    # COMPUTE VARIANCE
-    v <- tau[i]
-    if(i ==  K) v <- v + get.rho.inflation(i)
+      # COMPUTE VARIANCE
+      v <- tau[i]
+      if(i ==  K) v <- v + get.rho.inflation(i)
 
-    # SPECIFY THE DENSITY
-    m <- get.eff(i) - get.eff(i-1)
-    fi <- dnorm(grid, mean=m, sd=sqrt(v))
+      # SPECIFY THE DENSITY
+      m <- get.eff(i) - get.eff(i-1)
+      fi <- dnorm(grid, mean=m, sd=sqrt(v))
 
-    # GET THE CONVOLUTION WITH THE PREVIOUS INCREMENTS
-    # AND THE INDEPENDENT INCREMENT
-    fi.cuml <- conv(f.prev, fi, grid=grid, delta=dx)
+      # GET THE CONVOLUTION WITH THE PREVIOUS INCREMENTS
+      # AND THE INDEPENDENT INCREMENT
+      fi.cuml <- conv(f.prev, fi, grid=grid, delta=dx)
 
-    if(i == K){
+      if(i == K){
 
-      # IF IN THE LAST STAGE, FILL IN DENSITY WITH THE FULL CONVOLUTION
-      # DOESN'T MATTER REJECTION / CONTINUATION B/C AT LAST STAGE
-      densities[, i] <- fi.cuml
+        # IF IN THE LAST STAGE, FILL IN DENSITY WITH THE FULL CONVOLUTION
+        # DOESN'T MATTER REJECTION / CONTINUATION B/C AT LAST STAGE
+        densities[, i] <- fi.cuml
 
-    } else {
+      } else {
 
-      # TRUNCATE THE DENSITY BASED ON REJECTION REGION
-      fi.trun <- get.truncations(i=i, f=fi.cuml)
+        # TRUNCATE THE DENSITY BASED ON REJECTION REGION
+        fi.trun <- get.truncations(i=i, f=fi.cuml)
 
-      # FILL IN THE DENSITY FOR THIS STAGE REJECTION ONLY
-      densities[, i] <- fi.trun$R
+        # FILL IN THE DENSITY FOR THIS STAGE REJECTION ONLY
+        densities[, i] <- fi.trun$R
 
-      # REPLACE THE PREVIOUS DENSITY WITH THIS ONE
-      # IN THE CONTINUATION REGION
-      f.prev <- fi.trun$C
+        # REPLACE THE PREVIOUS DENSITY WITH THIS ONE
+        # IN THE CONTINUATION REGION
+        f.prev <- fi.trun$C
 
+      }
     }
   }
-  return(densities)
+  return(list(grid=grid, dens=densities))
 }
 
 # TEST IT OUT -------------------------------
 
-n_k <- ceiling(runif(K, 50, 100))
+n_k <- rep(200, 5)
 s_bounds <- convert.bounds(u_k, n_k)
 
 # THIS IS ACCURATE PROPORTIONALLY TO THE GRIDSIZE
-dens <- get.joint.density(n_k=n_k, lr_bounds=u_k,
+dens <- get.joint.density(n_k=n_k, lr_bounds=u_k[1:(K-1)],
                           gridsize=1e5)
 sum(dens) * 2e-4
 
-dens.ancova <- get.joint.density(n_k=n_k, lr_bounds=u_k, rho=0.5,
+dens.ancova <- get.joint.density(n_k=n_k, lr_bounds=u_k, rho=0.9,
                                  gridsize=1e5)
-sum(dens) * 2e-4
-
-# CHECK FOR TYPE 1 ERROR
-
-grid <- seq(-10, 10, length.out=1e5)
-reject <- sapply(s_bounds, function(x) abs(grid) > x)
-sum(reject * dens) * 2e-4
-sum(reject * dens.ancova) * 2e-4 # type 1 error inflated
-
-# WHAT HAPPENS IF WE CHANGE THE EFFECT SIZE
-# THIS SHOULD BE A MUCH LARGER PROBABILITY OF REJECTION!
-dens.d <- get.joint.density(n_k=n_k, lr_bounds=u_k, delta=0.2,
-                          gridsize=1e5)
-sum(reject * dens.d) * 2e-4
-
-# NOTE: IF DELTA GETS TOO LARGE, YOU NEED TO CHANGE THE UPPER AND LOWER
-# GRID FOR X, BECAUSE THEN YOU RUN OUT OF ROOM IN THE GRID!
+sum(dens$dens) * 2e-4
+#
+# # CHECK FOR TYPE 1 ERROR
+#
+# grid <- seq(-10, 10, length.out=1e5)
+# reject <- sapply(s_bounds, function(x) abs(grid) > x)
+# sum(reject * dens) * 2e-4
+# sum(reject * dens.ancova) * 2e-4 # type 1 error inflated
+#
+# # WHAT HAPPENS IF WE CHANGE THE EFFECT SIZE
+# # THIS SHOULD BE A MUCH LARGER PROBABILITY OF REJECTION!
+# dens.d <- get.joint.density(n_k=n_k, lr_bounds=u_k, delta=0.2,
+#                           gridsize=1e5)
+# sum(reject * dens.d) * 2e-4
+#
+# # NOTE: IF DELTA GETS TOO LARGE, YOU NEED TO CHANGE THE UPPER AND LOWER
+# # GRID FOR X, BECAUSE THEN YOU RUN OUT OF ROOM IN THE GRID!
+#
+# # COMPARE TO SIMUALTED VERSION
+# u_k1 <- c(4.468297, 3.381480, 2.710148, 2.305284, 2.031209)
+# u_k2 <- c(4.468297, 3.381480, 2.710148, 2.305284, 2.033433)
+#
+# dens.1 <- get.joint.density(n_k=n_k, lr_bounds=u_k1, delta=0, rho=1,
+#                             gridsize=1e5)
+# dens.2 <- get.joint.density(n_k=n_k, lr_bounds=u_k1, delta=0, rho=0.9950372,
+#                             gridsize=1e5)
+#
+# s_bounds1 <- convert.bounds(u_k1, n_k)
+# s_bounds2 <- convert.bounds(u_k2, n_k)
+# grid <- seq(-10, 10, length.out=1e5)
+# reject1 <- sapply(s_bounds1, function(x) abs(grid) > x)
+# reject2 <- sapply(s_bounds2, function(x) abs(grid) > x)
+#
+#
+# sum(reject1 * dens.1) * 2e-4
+# sum(reject1 * dens.2) * 2e-4
+# sum(reject2 * dens.2) * 2e-4

@@ -1,27 +1,27 @@
 # CUTOFFS ON THE LIKELIHOOD RATIO SCALE
-rm(list=ls())
+# rm(list=ls())
 
 # SETUP --------------------------------
 
-OBF <- TRUE
-K <- 5
-
-# OBrien and Fleming Critical Value Constants
-bound_obf <- c(1.9600, 2.7965, 3.4711, 4.0486, 4.5617,
-               5.0283, 5.5490, 5.8611, 6.2395, 6.5981,
-               6.9396, 7.2663, 7.5799, 7.8820, 8.1736)
-
-# Pocock Critical Value Constants
-bound_poc <- c(1.9600, 2.1783, 2.2895, 2.3613, 2.4132,
-               2.4532, 2.4855, 2.5123, 2.5352, 2.5550,
-               2.5724, 2.5880, 2.6019, 2.6146, 2.6261)
-
-# COMPUTE CRITICAL VALUES
-if(OBF){
-  u_k <- bound_obf[K] / sqrt(1:K)
-} else {
-  u_k <- bound_poc[K] / rep(1, K)
-}
+# OBF <- TRUE
+# K <- 5
+#
+# # OBrien and Fleming Critical Value Constants
+# bound_obf <- c(1.9600, 2.7965, 3.4711, 4.0486, 4.5617,
+#                5.0283, 5.5490, 5.8611, 6.2395, 6.5981,
+#                6.9396, 7.2663, 7.5799, 7.8820, 8.1736)
+#
+# # Pocock Critical Value Constants
+# bound_poc <- c(1.9600, 2.1783, 2.2895, 2.3613, 2.4132,
+#                2.4532, 2.4855, 2.5123, 2.5352, 2.5550,
+#                2.5724, 2.5880, 2.6019, 2.6146, 2.6261)
+#
+# # COMPUTE CRITICAL VALUES
+# if(OBF){
+#   u_k <- bound_obf[K] / sqrt(1:K)
+# } else {
+#   u_k <- bound_poc[K] / rep(1, K)
+# }
 
 # HELPER FUNCTIONS --------------------------
 
@@ -73,8 +73,8 @@ get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
   # AND REJECTION REGIONS
   if(K > 1){
     s_bounds <- convert.bounds(lr_bounds, n_k[1:(K-1)])
-    con <- sapply(s_bounds, function(x) abs(grid) <= x)
-    rej <- sapply(s_bounds, function(x) abs(grid) > x)
+    con <- sapply(s_bounds, function(x) abs(grid) < x)
+    rej <- sapply(s_bounds, function(x) abs(grid) >= x)
   }
 
   # PLACEHOLDER FOR THE MATRIX OF DENSITIES FOR EACH
@@ -88,6 +88,7 @@ get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
     f.C <- f
     f.R[which(con[, i])] <- 0
     f.C[which(rej[, i])] <- 0
+    # f.C <- f.C / (sum(f.C)*dx)
     return(list(R=f.R, C=f.C))
   }
 
@@ -111,12 +112,15 @@ get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
     # THAT THERE IS A PROGNOSTIC COVARIATE, AND IF ANCOVA IS BEING
     # PERFORMED AT THE LAST STAGE, THEN IT'S INFLATED
     get.rho.inflation <- function(i) 2 * (1 - rho) * sum(tau[1:(i-1)])
+    get.rho.inflation <- function(i) 0.5 * (1 - sqrt(rho))
+    get.rho.inflation <- function(i) 0.5 * (1 - rho)
 
     for(i in 2:K){
 
       # COMPUTE VARIANCE
       v <- tau[i]
       if(i ==  K) v <- v + get.rho.inflation(i)
+      print(v)
 
       # SPECIFY THE DENSITY
       m <- get.eff(i) - get.eff(i-1)
@@ -152,18 +156,18 @@ get.joint.density <- function(n_k, lr_bounds, delta=0, rho=1,
 
 # TEST IT OUT -------------------------------
 
-n_k <- rep(200, 5)
-s_bounds <- convert.bounds(u_k, n_k)
-
-# THIS IS ACCURATE PROPORTIONALLY TO THE GRIDSIZE
-dens <- get.joint.density(n_k=n_k, lr_bounds=u_k[1:(K-1)],
-                          gridsize=1e5)
-sum(dens) * 2e-4
-
-dens.ancova <- get.joint.density(n_k=n_k, lr_bounds=u_k, rho=0.9,
-                                 gridsize=1e5)
-sum(dens$dens) * 2e-4
+# n_k <- rep(200, 5)
+# s_bounds <- convert.bounds(u_k, n_k)
 #
+# # THIS IS ACCURATE PROPORTIONALLY TO THE GRIDSIZE
+# dens <- get.joint.density(n_k=n_k, lr_bounds=u_k[1:(K-1)],
+#                           gridsize=1e5)
+# sum(dens) * 2e-4
+#
+# dens.ancova <- get.joint.density(n_k=n_k, lr_bounds=u_k, rho=0.9,
+#                                  gridsize=1e5)
+# sum(dens$dens) * 2e-4
+# #
 # # CHECK FOR TYPE 1 ERROR
 #
 # grid <- seq(-10, 10, length.out=1e5)

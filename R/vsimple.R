@@ -2,6 +2,7 @@ rm(list=ls())
 source("R/trial-funcs.R")
 source("R/ancova.R")
 source("R/boundaries.R")
+source("R/boundaries2.R")
 source("R/trial-data.R")
 library(ggplot2)
 
@@ -43,13 +44,13 @@ try.trial <- function(K, gamma, new=FALSE){
 
   set.seed(10)
   trial <- run.full.trial(gamma=c(gamma), theta=c(1),
-                          estimate_sigma=TRUE,
+                          estimate_sigma=FALSE,
                           do_ancova=FALSE,
                           N=1000,
                           n_sims=100000,
                           a.func=a.func.obf, new=new)
   trial.2 <- run.full.trial(gamma=c(gamma), theta=c(1),
-                          estimate_sigma=TRUE,
+                          estimate_sigma=FALSE,
                           do_ancova=TRUE,
                           N=1000,
                           n_sims=100000,
@@ -59,8 +60,8 @@ try.trial <- function(K, gamma, new=FALSE){
   return(cbind(trial, trial.2))
 }
 
-t1 <- try.trial(4, gamma=1.5)
-t2 <- try.trial(4, gamma=1.5, new=TRUE)
+t1 <- try.trial(2, gamma=3)
+t2 <- try.trial(2, gamma=3, new=TRUE)
 
 TRIALS.1 <- sapply(2:5, try.trial, gamma=0.1)
 TRIALS.2 <- sapply(2:5, try.trial, gamma=0.5)

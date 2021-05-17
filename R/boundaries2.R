@@ -37,6 +37,7 @@ get.boundaries.aspend2 <- function(a.func, a, rates, N,
   #                          dens=dens[, K_prev+1])
 
   bounds <- c()
+  # browser()
   for(i in 1:K){
     if(i > K_prev){
       # Create the joint densities
@@ -44,7 +45,9 @@ get.boundaries.aspend2 <- function(a.func, a, rates, N,
                                 delta=0, rho=rho, ...)
       bound <- solve.boundary2(power=a.diff[i],
                               dens=dens$dens[, i], grid=dens$grid)
+      browser()
       bound <- bound / sqrt(tau_s[i])
+      browser()
     } else {
       bound <- u_k[i]
     }

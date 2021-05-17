@@ -29,6 +29,7 @@ ancova.stats <- function(n_sims, n_k, gamma, theta, sigma2, ancova=TRUE){
     Sigma[K, 1:(K-1)] <- Sigma[K, 1:(K-1)] * c(co.var)
     Sigma[1:(K-1), K] <- Sigma[1:(K-1), K] * c(co.var)
   }
+  print(Sigma)
   sims <- mvrnorm(n=n_sims, mu=rep(0, length(n_k)),
                   Sigma=Sigma)
   return(sims)
@@ -81,7 +82,8 @@ fit.stage <- function(data, stage, bounds, ancova=TRUE, estimate_sigma=TRUE, new
 
   if(new){
     if(ancova){
-      rho <- sigma2**0.5 / sqrt(sigma2 + (gamma*theta)**2)
+      rho <- sqrt(sigma2) / sqrt(sigma2 + (gamma*theta)**2)
+      print(rho)
     } else {
       rho <- 1
     }

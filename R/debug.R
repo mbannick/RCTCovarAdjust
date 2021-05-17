@@ -21,7 +21,7 @@ spend.2 <- function(u, a, vec, u.1, vec.1) mean(abs(vec) >= u & abs(vec.1) < u.1
 dens <- get.joint.density(n_k=n_k, lr_bounds=c(u_1),
                           delta=0, rho=rho, gridsize=1e5)
 
-corr.2 <- sqrt(t_k[1]) * rho
+corr.2 <- sqrt(t_k[1]) * 0.5
 covv.2 <- matrix(c(1, corr.2, corr.2, 1), nrow=2, ncol=2)
 set.seed(10)
 t.2 <- mvrnorm(n=1000000, mu=c(0, 0), covv.2)

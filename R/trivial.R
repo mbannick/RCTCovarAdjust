@@ -8,7 +8,7 @@ library(magrittr)
 n_k <- c(100, 100)
 t_k <- cumsum(n_k) / sum(n_k)
 gamma <- 6; theta <- 1; sigma2 <- 1
-nsim <- 10000
+nsim <- 1000000
 
 # OBF alpha spending function
 a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
@@ -16,7 +16,7 @@ a.spend <- a.func.obf(a=0.05, c(0, t_k)) %>% diff
 
 # Get correlations for 1 v. 2 based on covariate adjustment or not
 corr.1 <- sqrt(t_k[1])
-corr.2 <- sqrt(t_k[1]) * (sigma2 / (sigma2 + (gamma * theta)**2))
+corr.2 <- sqrt(t_k[1]) * sqrt(sigma2 / (sigma2 + (gamma * theta)**2))
 
 # Create covariance matrices
 covv.1 <- matrix(c(1, corr.1, corr.1, 1), nrow=2, ncol=2)

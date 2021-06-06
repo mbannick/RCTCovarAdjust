@@ -95,7 +95,7 @@ data[, start := times - 0.5]
 cols <- brewer.pal(10, "Spectral")[1:4]
 cols <- c("black", cols)
 
-pdf("critical-values.pdf", height=5, width=8)
+pdf("critical-values-2.pdf", height=5, width=8)
 ggplot(data=data) +
   geom_segment(aes(x=start, y=b, xend=stop, yend=b,
                    color=factor(gamma)), size=1) +

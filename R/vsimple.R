@@ -3,10 +3,12 @@ source("R/trial-funcs.R")
 source("R/ancova.R")
 source("R/boundaries.R")
 source("R/boundaries2.R")
+source("R/boundaries3.R")
 source("R/trial-data.R")
 library(ggplot2)
+library(RColorBrewer)
 
-try.trial <- function(K, gamma, new=FALSE){
+try.trial <- function(K, gamma, new=TRUE){
 
   t_k <- 1:K/K
   p_k <- t_k

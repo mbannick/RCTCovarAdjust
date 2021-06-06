@@ -87,7 +87,7 @@ fit.stage <- function(data, stage, bounds, ancova=TRUE, estimate_sigma=TRUE, new
     } else {
       rho <- 1
     }
-    bounds <- get.boundaries.aspend2(u_k=bounds, rho=rho, a.func=a.func,
+    bounds <- get.boundaries.aspend3(u_k=bounds, rho=rho, a.func=a.func,
                                      a=a, rates=rates, N=N)
   } else {
     bounds <- get.boundaries.aspend(u_k=bounds,

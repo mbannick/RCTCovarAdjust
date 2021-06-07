@@ -1,4 +1,4 @@
-#' P-values and confidence intervals
+#' P-values
 library(magrittr)
 library(MASS)
 library(mvtnorm)
@@ -10,6 +10,7 @@ source("R/trial-funcs.R")
 #' @param obs Observed z-statistic
 #' @param u_k Vector of boundaries for *previous* stages
 #' @param corr Correlation matrix for test statistics
+#' @param mean Mean shift vector for the test statistic
 #' @param ... Additional arguments for pmvnorm algorithm
 #'
 #' @examples
@@ -24,10 +25,16 @@ source("R/trial-funcs.R")
 #' get.pvalue.sw(obs=2.5, u_k=u_k[1:3], corr=corr)
 #' get.pvalue.sw(obs=1.5, u_k=u_k[1:3], corr=corr)
 #' get.pvalue.sw(obs=-1.5, u_k=u_k[1:3], corr=corr)
-get.pvalue.sw <- function(obs, u_k, corr,
+get.pvalue.sw <- function(obs, u_k, corr, mean=NULL,
                           algorithm=Miwa(steps=1000)){
 
   K <- length(u_k) + 1
+
+  if(is.null(mean)){
+    mean <- rep(0, K)
+  } else {
+    if(length(mean) != K) stop()
+  }
 
   p.upper.tot <- 0
   p.lower.tot <- 0
@@ -35,8 +42,8 @@ get.pvalue.sw <- function(obs, u_k, corr,
   for(i in 1:K){
     if(i == 1){
 
-      p.upper <- pnorm(u_k[i], lower.tail=F)
-      p.lower <- pnorm(u_k[i], lower.tail=F)
+      p.upper <- pnorm(u_k[i], mean=mean[i], lower.tail=F)
+      p.lower <- pnorm(u_k[i], mean=mean[i], lower.tail=F)
 
     } else {
       corr.i <- corr[1:i, 1:i]
@@ -56,12 +63,14 @@ get.pvalue.sw <- function(obs, u_k, corr,
         lower=c(lower.prev, upper.i),
         upper=c(upper.prev, Inf),
         corr=corr.i,
+        mean=mean[1:i],
         algorithm=algorithm
       )
       p.lower <- pmvnorm(
         lower=c(lower.prev, -Inf),
         upper=c(upper.prev, lower.i),
         corr=corr.i,
+        mean=mean[1:i],
         algorithm=algorithm
       )
     }

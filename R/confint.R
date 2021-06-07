@@ -23,6 +23,7 @@ source("R/trial-funcs.R")
 #' get.pvalue.sw(obs=u_k[4], u_k=u_k[1:3], corr=corr)
 #' get.pvalue.sw(obs=2.5, u_k=u_k[1:3], corr=corr)
 #' get.pvalue.sw(obs=1.5, u_k=u_k[1:3], corr=corr)
+#' get.pvalue.sw(obs=-1.5, u_k=u_k[1:3], corr=corr)
 get.pvalue.sw <- function(obs, u_k, corr,
                           algorithm=Miwa(steps=1000)){
 
@@ -44,8 +45,8 @@ get.pvalue.sw <- function(obs, u_k, corr,
       upper.prev <- u_k[1:(i-1)]
 
       if(i == K){
-        lower.i <- -obs
-        upper.i <- obs
+        lower.i <- -abs(obs)
+        upper.i <- -abs(obs)
       } else {
         lower.i <- -u_k[i]
         upper.i <- u_k[i]

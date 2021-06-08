@@ -17,29 +17,44 @@ source("R/pvalues.R")
 #' n_k <- rep(10, K)
 #' N <- sum(n_k)
 #' corr.1 <- basic.cov(n_k)
-#' corr.2 <- basic.cov(n_k, rho=0.1)
+#' corr.2 <- basic.cov(n_k, rho=0.9)
+#' corr.3 <- basic.cov(n_k, rho=0.9, extra=TRUE)
 #' alpha <- 0.05
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:3])
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:3])
+#'
+#' # Monitor with ANOVA and conduct ANCOVA after final ANOVA
+#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k)
+#'
+#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
+#' K <- length(u_k)
+#' n_k <- rep(10, K)
+#' N <- sum(n_k)
+#' corr.1 <- basic.cov(n_k)
+#' corr.2 <- basic.cov(n_k, rho=0.1)
+#' corr.3 <- basic.cov(n_k, rho=0.1, extra=TRUE)
+#' alpha <- 0.05
+#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:(K-1)])
+#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:(K-1)])
+#'
+#' # Monitor with ANOVA and conduct ANCOVA after final ANOVA
+#' u_k2 <- c(4.415989, 3.023536, 2.408191, 2.056245)
+#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k2)
 get.confint.sw <- function(est, sd_K, n_K, u_k, corr, alpha, algorithm=Miwa(steps=1000)){
-  K <- length(u_k) + 1
   get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K
 
   # Create a function to translate the estimate to a z-statistic
   search.fun <- function(eff, low=FALSE){
     z <- get.z(eff)
     if(low){
-      p <- get.pvalue.sw(z, u_k=u_k[1:(K-1)], corr=corr, type="lower")
+      p <- get.pvalue.sw(z, u_k=u_k, corr=corr, type="lower")
     } else {
-      p <- get.pvalue.sw(z, u_k=u_k[1:(K-1)], corr=corr, type="upper")
+      p <- get.pvalue.sw(z, u_k=u_k, corr=corr, type="upper")
     }
     return(p - alpha/2)
   }
-
   # Test out a lot of different mean values to see what the p-value is
-  lower <- uniroot(search.fun, low=FALSE, lower=-100, upper=est)$root
-  upper <- uniroot(search.fun, low=TRUE, lower=est, upper=100)$root
-
+  lower <- uniroot(search.fun, low=FALSE, lower=-100, upper=est, trace=1)$root
+  upper <- uniroot(search.fun, low=TRUE, lower=est, upper=100, trace=1)$root
   return(c(lower, upper))
 }
-

@@ -5,19 +5,30 @@ library(data.table)
 #'
 #' @example
 #' basic.cov(c(10, 10, 10))
-basic.cov <- function(n_k, rho=1){
+basic.cov <- function(n_k, rho=1, extra=FALSE){
 
   K <- length(n_k)
   n_cuml <- cumsum(n_k)
 
-  Sigma <- matrix(NA, nrow=K, ncol=K)
+  dim <- K
+  if(extra) dim <- dim + 1
+
+  Sigma <- matrix(NA, nrow=dim, ncol=dim)
   for(i in 1:K){
     for(j in 1:K){
       Sigma[i, j] <- sqrt(min(n_cuml[i], n_cuml[j])/max(n_cuml[i], n_cuml[j]))
     }
   }
-  Sigma[K, 1:(K-1)] <- Sigma[K, 1:(K-1)] * rho
-  Sigma[1:(K-1), K] <- Sigma[1:(K-1), K] * rho
+  if(extra){
+    Sigma[K+1, 1:(K-1)] <- Sigma[K, 1:(K-1)] * rho
+    Sigma[1:(K-1), K+1] <- Sigma[1:(K-1), K] * rho
+    Sigma[K:(K+1), K:(K+1)] <- 1
+    Sigma[K, K+1] <- rho
+    Sigma[K+1, K] <- rho
+  } else {
+    Sigma[K, 1:(K-1)] <- Sigma[K, 1:(K-1)] * rho
+    Sigma[1:(K-1), K] <- Sigma[1:(K-1), K] * rho
+  }
   return(Sigma)
 }
 

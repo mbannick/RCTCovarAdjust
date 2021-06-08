@@ -66,7 +66,8 @@ solve.boundary <- function(power, mean=NULL, corr=NULL, u_k=NULL,
 #' get.boundaries(a.func=a.func.obf, a=0.05,
 #'                rates=t, N=1000, rho=0.5)
 get.boundaries <- function(a.func, a, rates, N,
-                           u_k=c(), rho=1, algorithm=Miwa(steps=1000)){
+                           u_k=c(), rho=1, algorithm=Miwa(steps=1000),
+                           extra=FALSE){
 
   # Get sample size increments
   K <- length(rates)
@@ -89,8 +90,7 @@ get.boundaries <- function(a.func, a, rates, N,
       # Create covariance matrix
       Sigma <- basic.cov(n_k[1:i])
       if(i == K){
-        Sigma[K, 1:(K-1)] <- Sigma[K, 1:(K-1)] * rho
-        Sigma[1:(K-1), K] <- Sigma[1:(K-1), K] * rho
+        Sigma <- basic.cov(n_k[1:i], rho=rho)
       }
       bound <- solve.boundary(power=a.cuml[i], corr=Sigma,
                               u_k=bounds, algorithm=algorithm)

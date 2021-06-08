@@ -5,7 +5,7 @@ library(data.table)
 #'
 #' @example
 #' basic.cov(c(10, 10, 10))
-basic.cov <- function(n_k){
+basic.cov <- function(n_k, rho=1){
 
   K <- length(n_k)
   n_cuml <- cumsum(n_k)
@@ -16,6 +16,8 @@ basic.cov <- function(n_k){
       Sigma[i, j] <- sqrt(min(n_cuml[i], n_cuml[j])/max(n_cuml[i], n_cuml[j]))
     }
   }
+  Sigma[K, 1:(K-1)] <- Sigma[K, 1:(K-1)] * rho
+  Sigma[1:(K-1), K] <- Sigma[1:(K-1), K] * rho
   return(Sigma)
 }
 

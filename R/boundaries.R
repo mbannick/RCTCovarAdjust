@@ -56,15 +56,15 @@ solve.boundary <- function(power, mean=NULL, corr=NULL, u_k=NULL,
 #' a.func.pocock <- function(a, t) a * log(1 + (exp(1) - 1) * t)
 #' get.boundaries(a.func=a.func.pocock, a=0.05,
 #'                rates=t, N=1000)
-#' get.boundaries(a.func=a.func.pocock, a=0.05,
-#'                rates=t, N=1000, algorithm=Miwa(steps=1000))
+#' get.boundaries(a.func=a.func.pocock, a=0.05, rho=0.5,
+#'                rates=t, N=1000)
 #'
 #' # approximate O'Brien-Fleming boundaries
 #' a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
 #' get.boundaries(a.func=a.func.obf, a=0.05,
 #'                rates=t, N=1000)
 #' get.boundaries(a.func=a.func.obf, a=0.05,
-#'                rates=t, N=1000, algorithm=Miwa(steps=1000))
+#'                rates=t, N=1000, rho=0.5)
 get.boundaries <- function(a.func, a, rates, N,
                            u_k=c(), rho=1, algorithm=Miwa(steps=1000)){
 

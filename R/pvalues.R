@@ -21,12 +21,23 @@ source("R/trial-funcs.R")
 #' # boundary.
 #' n_k <- rep(100, 4)
 #' corr <- basic.cov(n_k)
+#' rho <- 0.5
+#' K <- 4
+#' corr.2 <- corr
+#' corr.2[K, 1:(K-1)] <- corr.2[K, 1:(K-1)] * rho
+#' corr.2[1:(K-1), K] <- corr.2[1:(K-1), K] * rho
 #' get.pvalue.sw(obs=u_k[4], u_k=u_k[1:3], corr=corr)
 #' get.pvalue.sw(obs=2.5, u_k=u_k[1:3], corr=corr)
 #' get.pvalue.sw(obs=1.5, u_k=u_k[1:3], corr=corr)
 #' get.pvalue.sw(obs=-1.5, u_k=u_k[1:3], corr=corr)
 get.pvalue.sw <- function(obs, u_k, corr, mean=NULL,
-                          algorithm=Miwa(steps=1000)){
+                          algorithm=Miwa(steps=1000),
+                          type="two-sided"){
+
+  if(!type %in% c("two-sided", "lower", "upper")) stop(
+    "Unrecognized p-value type. ",
+    "Provide one of two-sided, lower, or upper."
+  )
 
   K <- length(u_k) + 1
 
@@ -53,7 +64,7 @@ get.pvalue.sw <- function(obs, u_k, corr, mean=NULL,
 
       if(i == K){
         lower.i <- -abs(obs)
-        upper.i <- -abs(obs)
+        upper.i <- abs(obs)
       } else {
         lower.i <- -u_k[i]
         upper.i <- u_k[i]
@@ -77,5 +88,12 @@ get.pvalue.sw <- function(obs, u_k, corr, mean=NULL,
     p.upper.tot <- p.upper.tot + p.upper
     p.lower.tot <- p.lower.tot + p.lower
   }
-  return(2*min(p.upper.tot, p.lower.tot))
+
+  if(type == "two-sided"){
+    return(2*min(p.upper.tot, p.lower.tot))
+  } else if(type == "lower"){
+    return(p.upper.tot[1])
+  } else if(type == "upper"){
+    return(p.lower.tot[1])
+  }
 }

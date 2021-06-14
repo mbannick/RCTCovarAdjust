@@ -20,27 +20,23 @@ source("R/pvalues.R")
 #' corr.2 <- basic.cov(n_k, rho=0.9)
 #' corr.3 <- basic.cov(n_k, rho=0.9, extra=TRUE)
 #' alpha <- 0.05
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:3])
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:3])
-#'
-#' # Monitor with ANOVA and conduct ANCOVA after final ANOVA
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k)
-#'
-#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
-#' K <- length(u_k)
-#' n_k <- rep(10, K)
-#' N <- sum(n_k)
-#' corr.1 <- basic.cov(n_k)
-#' corr.2 <- basic.cov(n_k, rho=0.1)
-#' corr.3 <- basic.cov(n_k, rho=0.1, extra=TRUE)
-#' alpha <- 0.05
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:(K-1)])
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:(K-1)])
 #'
 #' # Monitor with ANOVA and conduct ANCOVA after final ANOVA
+#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k)
+#'
+#' # ------------------------------------------------------ #
+#' # FIX IT WITH NEW BOUNDS
+#' # These are the alpha spending bounds for alpha = 0.045, so that there's
+#' # some type I error left over.
+#'
 #' u_k2 <- c(4.415989, 3.023536, 2.408191, 2.056245)
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k2)
 get.confint.sw <- function(est, sd_K, n_K, u_k, corr, alpha, algorithm=Miwa(steps=1000)){
+
+  # Function to translate effect size into z-statistic
+  # At the analysis stage K (not at the first stage)
   get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K
 
   # Create a function to translate the estimate to a z-statistic

@@ -1,9 +1,7 @@
-#' P-values
 library(magrittr)
 library(MASS)
 library(mvtnorm)
-source("R/trial-data.R")
-source("R/trial-funcs.R")
+source("R/covariance.R")
 
 #' Get a stage-wise p-value
 #'
@@ -22,14 +20,11 @@ source("R/trial-funcs.R")
 #' n_k <- rep(100, 4)
 #' corr.1 <- basic.cov(n_k)
 #' corr.2 <- basic.cov(n_k, rho=0.5)
-#' corr.3 <- basic.cov(n_k, rho=0.5, extra=TRUE)
-#' get.pvalue.sw(obs=u_k[4], u_k=u_k[1:3], corr=corr)
-#' get.pvalue.sw(obs=2.5, u_k=u_k[1:3], corr=corr)
-#' get.pvalue.sw(obs=1.5, u_k=u_k[1:3], corr=corr)
-#' get.pvalue.sw(obs=-1.5, u_k=u_k[1:3], corr=corr)
+#' get.pvalue.sw(obs=u_k[4], u_k=u_k[1:3], corr=corr.1)
+#' get.pvalue.sw(obs=2.5, u_k=u_k[1:3], corr=corr.1)
+#' get.pvalue.sw(obs=1.5, u_k=u_k[1:3], corr=corr.1)
+#' get.pvalue.sw(obs=-1.5, u_k=u_k[1:3], corr=corr.1)
 #' get.pvalue.sw(obs=-1.5, u_k=u_k[1:3], corr=corr.2)
-#'
-#' get.pvalue.sw(obs=-1.5, u_k=u_k, corr=corr.3)
 get.pvalue.sw <- function(obs, u_k, corr, mean=NULL,
                           algorithm=Miwa(steps=1000),
                           type="two-sided"){

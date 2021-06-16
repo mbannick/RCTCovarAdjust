@@ -1,5 +1,6 @@
 # SIMULATION SUBMISSION SCRIPT
 # ----------------------------
+library(magrittr)
 
 # Read in command line arguments
 args <- commandArgs(trailingOnly=TRUE)
@@ -9,6 +10,7 @@ OUT_DIR <- args[1]
 dir.create(OUT_DIR, recursive=TRUE)
 
 ERROR <- sprintf("%s/output", OUT_DIR)
+dir.create(ERROR, recursive=TRUE)
 
 # Number of simulations to run
 N_SIMS <- args[2]
@@ -31,12 +33,11 @@ params <- list(
 )
 
 # Save parameter list and number of tasks
-n_jobs <- expand.grid(params) %>% nrow
-save(params, row.names=F, sprintf("%s/params.RData", OUT_DIR))
+N_JOBS <- expand.grid(params) %>% nrow
+save(params, file=sprintf("%s/params.RData", OUT_DIR))
 
 # Submit job arrays
-command <- sprintf("qsub -cwd -j y
-                   -o %s
-                   -t 1-%s shell.R sim.R %s %s",
-                   ERROR, n_jobs, OUT_DIR, n_sims)
+command <- sprintf("qsub -cwd -j y -o %s -t 1-%s -q normal.q shell.sh sim.R %s %s",
+                   ERROR, N_JOBS, OUT_DIR, N_SIMS)
+print(command)
 system(command)

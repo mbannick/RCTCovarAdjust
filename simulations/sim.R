@@ -8,7 +8,7 @@ source("../R/constants.R")
 source("sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
-parallel <- FALSE
+parallel <- TRUE
 
 # GET TASK ID FROM SGE
 if(parallel){
@@ -20,7 +20,7 @@ if(parallel){
 # GET COMMAND LINE ARGS
 args <- commandArgs(trailingOnly=TRUE)
 OUT_DIR <- args[1]
-N_SIMS <- args[2]
+N_SIMS <- as.integer(args[2])
 
 # SET REPRODUCIBLE SEED
 set.seed(715)
@@ -29,7 +29,7 @@ set.seed(715)
 N_REPS <- 10
 
 # PARAMETER GRID
-params <- load(sprintf("%s/params.RData", OUT_DIR))
+load(sprintf("%s/params.RData", OUT_DIR))
 
 # PARAMETER GETTER FOR THIS TASK ID
 param_grid <- expand.grid(params)
@@ -49,7 +49,7 @@ a.func <- spend(
 sim.data <- sim.data.closure(
   delta=gp("delta"),
   beta=gp("beta"),
-  b0=gp("int"),
+  b0=gp("intercept"),
   cov_std=gp("cov_std"),
   obs_std=gp("obs_std"))
 
@@ -65,7 +65,7 @@ procedure <- procedure.closure(
   a.func=a.func)
 
 # RUN SIMULATION
-trial_data <- replicate(N_REPS, sim.trial(sim.data), simplify=F)
+trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
 result <- lapply(trial_data, procedure)
 
 # SAVE RESULTS

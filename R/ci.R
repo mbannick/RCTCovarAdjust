@@ -1,4 +1,4 @@
-source("R/pvalues.R")
+source("~/repos/RCTCovarAdjust/R/pvalues.R")
 
 # Confidence intervals
 

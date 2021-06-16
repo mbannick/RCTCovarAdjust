@@ -1,6 +1,6 @@
-source("R/covariance.R")
-source("R/boundaries.R")
-source("R/constants.R")
+source("~/repos/RCTCovarAdjust/R/covariance.R")
+source("~/repos/RCTCovarAdjust/R/boundaries.R")
+source("~/repos/RCTCovarAdjust/R/constants.R")
 
 #' Generating function to get boundaries
 #' based on previous bounds and a correlation matrix

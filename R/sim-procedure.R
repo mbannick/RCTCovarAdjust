@@ -1,7 +1,7 @@
-source("R/sim-data.R")
-source("R/sim-analysis.R")
-source("R/pvalues.R")
-source("R/ci.R")
+source("~/repos/RCTCovarAdjust/R/sim-data.R")
+source("~/repos/RCTCovarAdjust/R/sim-analysis.R")
+source("~/repos/RCTCovarAdjust/R/pvalues.R")
+source("~/repos/RCTCovarAdjust/R/ci.R")
 
 procedure.closure <- function(monitor, final, correct, rates, a.func){
 

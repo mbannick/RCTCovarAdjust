@@ -1,7 +1,7 @@
 library(magrittr)
 library(MASS)
 library(mvtnorm)
-source("R/covariance.R")
+source("~/repos/RCTCovarAdjust/R/covariance.R")
 
 #' Get a stage-wise p-value
 #'

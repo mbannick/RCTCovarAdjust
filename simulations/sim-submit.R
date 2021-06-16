@@ -33,6 +33,6 @@ n_jobs <- expand.grid(params) %>% nrow
 save(params, row.names=F, sprintf("%s/params.RData", OUT_DIR))
 
 # Submit job arrays
-command <- sprintf("qsub -t 1-%s shell.R sim.R %s %s",
+command <- sprintf("qsub -cwd -t 1-%s shell.R sim.R %s %s",
                    n_jobs, OUT_DIR, n_sims)
 system(command)

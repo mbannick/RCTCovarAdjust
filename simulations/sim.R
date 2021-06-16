@@ -4,8 +4,8 @@ source("../R/sim-analysis.R")
 source("../R/sim-data.R")
 source("../R/sim-procedure.R")
 source("../R/sim-bounds.R")
-source("../R/sim-utils.R")
 source("../R/constants.R")
+source("sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
 parallel <- FALSE

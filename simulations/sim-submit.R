@@ -8,6 +8,8 @@ args <- commandArgs(trailingOnly=TRUE)
 OUT_DIR <- args[1]
 dir.create(OUT_DIR, recursive=TRUE)
 
+ERROR <- sprintf("%s/output", OUT_DIR)
+
 # Number of simulations to run
 N_SIMS <- args[2]
 
@@ -33,6 +35,8 @@ n_jobs <- expand.grid(params) %>% nrow
 save(params, row.names=F, sprintf("%s/params.RData", OUT_DIR))
 
 # Submit job arrays
-command <- sprintf("qsub -cwd -t 1-%s shell.R sim.R %s %s",
-                   n_jobs, OUT_DIR, n_sims)
+command <- sprintf("qsub -cwd -j y
+                   -o %s
+                   -t 1-%s shell.R sim.R %s %s",
+                   ERROR, n_jobs, OUT_DIR, n_sims)
 system(command)

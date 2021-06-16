@@ -1,7 +1,9 @@
 source("R/sim-data.R")
 source("R/sim-analysis.R")
+source("R/pvalues.R")
+source("R/ci.R")
 
-procedure.closure <- function(monitor, final, rates, a.func){
+procedure.closure <- function(monitor, final, correct, rates, a.func){
 
   bound.func <- get.boundary.closure(a.func=a.func, rates=rates)
 
@@ -35,7 +37,7 @@ procedure.closure <- function(monitor, final, rates, a.func){
 
         # Modify correlation matrix
         # to account for switch
-        if(match){
+        if(match | !correct){
           corr <- corr.mat(rates[1:i], 1)
         } else {
           corr <- corr.mat(rates[1:i], rho)
@@ -61,13 +63,13 @@ procedure.closure <- function(monitor, final, rates, a.func){
         # If we reject in the interim stage, and there
         # is a switch, need to add another test statistic
         # to the stage-wise ordering
-        if(!match & reject){
+        if(!match & reject & correct){
           corr <- corr.mat(rates[1:i], rho, extra=TRUE)
         }
       }
       bounds <- c(bounds, bound)
     }
-    if(!match & reject & !end_stage){
+    if(!match & reject & !end_stage & correct){
       u_k <- bounds
     } else {
       u_k <- bounds[1:(i-1)]

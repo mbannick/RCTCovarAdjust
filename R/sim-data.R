@@ -8,7 +8,6 @@ library(magrittr)
 #' sim(10)
 sim.data.closure <- function(delta, beta, b0, cov_std, obs_std){
   sim.data <- function(n){
-
     # intercept
     int <- rep(1, n)
 

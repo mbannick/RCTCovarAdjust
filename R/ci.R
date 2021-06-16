@@ -1,5 +1,3 @@
-source("R/trial-data.R")
-source("R/trial-funcs.R")
 source("R/pvalues.R")
 
 # Confidence intervals
@@ -33,8 +31,8 @@ source("R/pvalues.R")
 #'
 #' u_k2 <- c(4.415989, 3.023536, 2.408191, 2.056245)
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k2)
-get.confint.sw <- function(est, sd_K, n_K, u_k, corr, alpha, algorithm=Miwa(steps=1000)){
-
+get.confint.sw <- function(est, sd_K, n_K, u_k, corr,
+                           alpha, algorithm=Miwa(steps=1000)){
   # Function to translate effect size into z-statistic
   # At the analysis stage K (not at the first stage)
   get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K

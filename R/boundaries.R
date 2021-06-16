@@ -2,8 +2,8 @@ library(magrittr)
 library(MASS)
 library(mvtnorm)
 
-source("R/trial-data.R")
 source("R/constants.R")
+source("R/covariance.R")
 
 #' Root solve for a particular alpha level, two-sided.
 #'

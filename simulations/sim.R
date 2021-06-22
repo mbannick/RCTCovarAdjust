@@ -8,25 +8,22 @@ source("../R/constants.R")
 source("sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
-parallel <- TRUE
+parallel <- FALSE
 
 # GET TASK ID FROM SGE
 if(parallel){
   TASKID <- as.numeric(Sys.getenv("SGE_TASK_ID"))
+  args <- commandArgs(trailingOnly=TRUE)
+  OUT_DIR <- args[1]
+  N_SIMS <- as.integer(args[2])
 } else {
   TASKID <- 1
+  OUT_DIR <- "."
+  N_SIMS <- 10
 }
-
-# GET COMMAND LINE ARGS
-args <- commandArgs(trailingOnly=TRUE)
-OUT_DIR <- args[1]
-N_SIMS <- as.integer(args[2])
 
 # SET REPRODUCIBLE SEED
 set.seed(715)
-
-# STATIC PARAMS
-N_REPS <- 10
 
 # PARAMETER GRID
 load(sprintf("%s/params.RData", OUT_DIR))
@@ -66,7 +63,7 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
-result <- lapply(trial_data, procedure)
+result <- pblapply(trial_data, procedure)
 
 # SAVE RESULTS
 result <- condense.output(result)

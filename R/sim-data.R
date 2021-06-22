@@ -19,7 +19,7 @@ sim.data.closure <- function(delta, beta, b0, cov_std, obs_std){
     t <- rbinom(n, size=1, prob=0.5) %>% ifelse(1, -1)
 
     # noise
-    e <- rnorm(n, 0, obs_std**0.5)
+    e <- rnorm(n, 0, sd=obs_std)
 
     # outcome
     y <- int * b0 + t * delta + Z %*% beta + e %>% matrix

@@ -48,8 +48,14 @@ get.pvalue.sw <- function(obs, u_k, corr, mean=NULL,
   for(i in 1:K){
     if(i == 1){
 
-      p.upper <- pnorm(u_k[i], mean=mean[i], lower.tail=F)
-      p.lower <- pnorm(u_k[i], mean=mean[i], lower.tail=F)
+      if(length(u_k) == 0){ # reject at first stage
+        tail <- pnorm(abs(obs), mean=mean[i], lower.tail=F)
+      } else {
+        tail <- pnorm(u_k[i], mean=mean[i], lower.tail=F)
+      }
+
+      p.upper <- tail
+      p.lower <- tail
 
     } else {
       corr.i <- corr[1:i, 1:i]

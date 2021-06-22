@@ -69,10 +69,14 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
       }
       bounds <- c(bounds, bound)
     }
-    if(!match & reject & !end_stage & correct){
-      u_k <- bounds
+    if(i == 1){
+      u_k <- c()
     } else {
-      u_k <- bounds[1:(i-1)]
+      if(!match & reject & !end_stage & correct){
+        u_k <- bounds
+      } else {
+        u_k <- bounds[1:(i-1)]
+      }
     }
 
     final <- final.func(X, y)

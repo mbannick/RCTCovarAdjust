@@ -17,7 +17,6 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #'
 #' @param u_k Vector of boundaries up through stage k
 #' @param corr Correlation matrix for test statistics
-#' @param ... Additional arguments for pmvnorm
 #'
 #' @examples
 #' u_k <- c(4.332634, 2.963132, 2.359044)
@@ -28,7 +27,7 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' corr.2 <- corr.mat(n_k, rho=0.5)
 #' .reject.prob.k(u_k=u_k1, corr=corr.1)
 #' .reject.prob.k(u_k=u_k2, corr=corr.1)
-.reject.prob.k <- function(u_k, corr, ...){
+.reject.prob.k <- function(u_k, corr){
 
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
 
@@ -48,13 +47,13 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
       lower=c(lower.prev, -Inf),
       upper=c(upper.prev, lower.K),
       corr=corr,
-      ...
+      algorithm=Miwa(steps=1000)
     )
     p.upper <- pmvnorm(
       lower=c(lower.prev, upper.K),
       upper=c(upper.prev, Inf),
       corr=corr,
-      ...
+      algorithm=Miwa(steps=1000)
     )
   }
   return(c(p.lower, p.upper))
@@ -92,7 +91,7 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], corr=corr.2)
 #' # 0.1461026
 get.pvalue.sw <- function(obs, u_k, corr,
-                          type="two-sided", ...){
+                          type="two-sided"){
 
   .check.type(type)
   K <- nrow(u_k) + 1
@@ -107,7 +106,7 @@ get.pvalue.sw <- function(obs, u_k, corr,
         p.lower <- pnorm(obs, lower.tail=T)
         p.upper <- pnorm(obs, lower.tail=F)
       } else {
-        p.reject <- .reject.prob.k(u_k[i, ], corr=matrix(1), ...)
+        p.reject <- .reject.prob.k(u_k[i, ], corr=matrix(1))
         p.lower <- p.reject[1]
         p.upper <- p.reject[2]
       }
@@ -126,13 +125,15 @@ get.pvalue.sw <- function(obs, u_k, corr,
           lower=c(lower.prev, -Inf),
           upper=c(upper.prev, obs),
           corr=corr.i,
-          ...
+          algorithm=Miwa(steps=1000)
+
         )
         p.upper <- pmvnorm(
           lower=c(lower.prev, obs),
           upper=c(upper.prev, Inf),
           corr=corr.i,
-          ...
+          algorithm=Miwa(steps=1000)
+
         )
       }
     }
@@ -158,12 +159,33 @@ get.pvalue.sw <- function(obs, u_k, corr,
 #'            This is needed to compute the variance of the sample mean.
 #' @param corr Correlation matrix for all stages up through max stage K
 #' @param type Type of p-value (upper, lower, two-sided)
-#' @param ... Additional arguments for pmvnorm
+#'
+#' @examples
+#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
+#' u_k1 <- cbind(-u_k, u_k)
+#' u_k2 <- cbind(rep(-Inf, 4), u_k)
+#'
+#' # This gives exactly alpha = 0.05 by putting in the last
+#' # boundary.
+#' n_k <- c(10, 20, 30, 40)
+#' corr.1 <- corr.mat(n_k)
+#' corr.2 <- corr.mat(n_k, rho=0.5)
+#' get.pvalue.sm(obs=-2.014090, u_K=u_k1, corr=corr.1, n_K=n_k)
+#' # 0.05000002
+#' get.pvalue.sm(obs=u_k1[4,][1], u_k=u_k2[1:3,], corr=corr.1)
+#' get.pvalue.sw(obs=2.5, u_k=u_k1[1:3,], corr=corr.1)
+#' # 0.0247869
+#' get.pvalue.sw(obs=1.5, u_k=u_k1[1:3,], corr=corr.1)
+#' # 0.135164
+#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], corr=corr.1)
+#' # 0.135164
+#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], corr=corr.2)
+#' # 0.1461026
 get.pvalue.sm <- function(obs, u_K, corr, n_K,
-                          type="two-sided", ...){
+                          type="two-sided"){
 
   .check.type(type)
-  K <- nrow(n_K)
+  K <- nrow(u_K)
 
   p.lower.tot <- 0
   p.upper.tot <- 0
@@ -176,7 +198,6 @@ get.pvalue.sm <- function(obs, u_K, corr, n_K,
     # at stage i.
     sm.sd <- 1/n_K[i]**0.5
     sm.F <- function(x) pnorm(x, sd=sm.sd)
-    sm.f <- function(x) pnorm(x, sd=sm.sd)
 
     # Calculate the constant that will normalize the
     # truncated CDF.
@@ -207,10 +228,12 @@ get.pvalue.sm <- function(obs, u_K, corr, n_K,
       corr.i <- corr[1:i, 1:i]
 
       # Get probability of rejection at stage i
-      p.reject <- .reject.prob.k(u_K[1:i, ], corr=corr.i, ...)
+      p.reject <- sum(.reject.prob.k(u_K[1:i, ], corr=corr.i))
 
-      # The tail probabilities are the tail probabilities for sm.f.trunc
+      # The tail probabilities are the tail probabilities for sm.F.trunc
       # times the probability of rejecting in stage i.
+      cat("SMF")
+      print(sm.F.trunc(obs))
       p.lower <- p.reject * sm.F.trunc(obs)
       p.upper <- p.reject * (1 - sm.F.trunc(obs))
 
@@ -220,6 +243,8 @@ get.pvalue.sm <- function(obs, u_K, corr, n_K,
 
       # (1 - p.reject.tot) is the probability
       # of making it to the last stage K.
+      print(p.reject.tot)
+      print(1 - p.reject.tot)
       p.lower <- (1 - p.reject.tot) * sm.F(obs)
       p.upper <- (1 - p.reject.tot) * (1 - sm.F(obs))
 
@@ -227,6 +252,8 @@ get.pvalue.sm <- function(obs, u_K, corr, n_K,
 
     p.upper.tot <- p.upper.tot + p.upper
     p.lower.tot <- p.lower.tot + p.lower
+    print(p.upper.tot)
+    print(p.lower.tot)
   }
 
   if(type == "two-sided"){

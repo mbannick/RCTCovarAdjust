@@ -78,7 +78,7 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' # boundary.
 #' n_k <- c(10, 20, 30, 40)
 #' corr.1 <- corr.mat(n_k)
-#' corr.2 <- corr.mat(n_k, rho=0.5)
+#' corr.2 <- corr.mat(n_k, rho=0.5, mis=c(F, F, F, T))
 #' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], corr=corr.1)
 #' # 0.05000002
 #' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k2[1:3,], corr=corr.1)
@@ -92,7 +92,6 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' # 0.1461026
 get.pvalue.sw <- function(obs, u_k, corr,
                           type="two-sided"){
-
   .check.type(type)
   K <- nrow(u_k) + 1
 

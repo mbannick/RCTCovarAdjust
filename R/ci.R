@@ -15,9 +15,15 @@ source("~/repos/RCTCovarAdjust/R/pvalues.R")
 #' K <- nrow(u_k)
 #' n_k <- cumsum(rep(10, K))
 #' N <- sum(n_k)
+#'
+#' # Regular correlation
 #' corr.1 <- corr.mat(n_k)
-#' corr.2 <- corr.mat(n_k, rho=0.9)
-#' corr.3 <- corr.mat(n_k, rho=0.9, extra=TRUE)
+#'
+#' # Correlation with ANCOVA at last stage
+#' corr.2 <- corr.mat(n_k, rho=0.9, c(F, F, F, T))
+#'
+#' # Correlation with ANCOVA at last stage + extra
+#' corr.3 <- corr.mat(c(n_k, n_k[4]), rho=0.9, c(F, F, F, F, T))
 #' alpha <- 0.05
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:(K-1),])
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:(K-1),])
@@ -31,6 +37,7 @@ source("~/repos/RCTCovarAdjust/R/pvalues.R")
 #' # some type I error left over.
 #'
 #' u_k2 <- c(4.415989, 3.023536, 2.408191, 2.056245)
+#' u_k2 <- cbind(-u_k2, u_k2)
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k2)
 get.confint.sw <- function(est, sd_K, n_K, u_k, corr, alpha){
   # Function to translate effect size into z-statistic

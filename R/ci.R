@@ -20,7 +20,9 @@ source("~/repos/RCTCovarAdjust/R/pvalues.R")
 #' corr.3 <- corr.mat(n_k, rho=0.9, extra=TRUE)
 #' alpha <- 0.05
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:(K-1),])
+#' # 0.1186074 0.5213809
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:(K-1),])
+#' # 0.1151969 0.5247908
 #'
 #' # Monitor with ANOVA and conduct ANCOVA after final ANOVA
 #' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k)

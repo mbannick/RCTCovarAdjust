@@ -15,56 +15,51 @@ if(parallel){
   TASKID <- as.numeric(Sys.getenv("SGE_TASK_ID"))
   args <- commandArgs(trailingOnly=TRUE)
   OUT_DIR <- args[1]
-  N_SIMS <- as.integer(args[2])
+  STD <- as.integer(args[2])
+  NSIMS <- as.integer(args[3])
 } else {
   TASKID <- 70
   OUT_DIR <- "."
-  N_SIMS <- 10
+  STD <- 0.001
+  NSIMS <- 10
 }
 
 # SET REPRODUCIBLE SEED
-set.seed(715)
-
-# PARAMETER GRID
-load(sprintf("%s/params.RData", OUT_DIR))
-
-# PARAMETER GETTER FOR THIS TASK ID
-param_grid <- expand.grid(params)
-gp <- get.param.closure(TASKID, param_grid)
+set.seed(0)
+SEEDS <- sample(1:1000, size=1000, replace=FALSE)
+set.seed(SEEDS[TASKID])
 
 # GET INFORMATION FRACTION AND ALPHA SPENDING
 # FUNCTION BASED ON ARGUMENTS
-rates <- info.fractions(
-  stages=gp("stages"),
-  type=gp("ifracts"))
+rates <- c(0.5, 1)
 
 a.func <- spend(
-  a=gp("alpha"),
-  type=gp("afunc"))
+  a=0.05,
+  type="obf")
 
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
-  delta=gp("delta"),
-  beta=gp("beta"),
-  b0=gp("intercept"),
-  cov_std=gp("cov_std"),
-  obs_std=gp("obs_std"))
+  delta=0,
+  beta=1,
+  b0=1,
+  cov_std=0.1,
+  obs_std=STD)
 
 sim.trial <- sim.trial.closure(
-  N=gp("n"),
+  N=100,
   rates=rates)
 
 procedure <- procedure.closure(
-  monitor=gp("monitor"),
-  final=gp("final"),
-  correct=gp("correct"),
+  monitor=F,
+  final=T,
+  correct=F,
   rates=rates,
   a.func=a.func)
 
 # RUN SIMULATION
-trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
+trial_data <- replicate(NSIMS, sim.trial(sim.data), simplify=F)
 result <- lapply(trial_data, procedure)
 
 # SAVE RESULTS
-result <- condense.output(result)
-save(result, file=sprintf("%s/params_%s.RData", OUT_DIR, TASKID))
+result2 <- condense.output(result)
+save(result2, file=sprintf("%s/task_%s_std_%s.RData", OUT_DIR, TASKID, STD))

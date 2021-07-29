@@ -13,16 +13,16 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' @param u_k Previous boundaries.
 #' @param tol Tolerance parameter for binary search.
 #' @param ... Additional arguments for pmvnorm algorithm.
-solve.boundary <- function(power, mean=NULL, corr=NULL, u_k=NULL,
+solve.boundary <- function(power, corr=NULL, u_k=NULL,
                            tol=.Machine$double.eps, algorithm=Miwa(steps=1000)){
-  if(is.null(mean)) mean <- rep(0, length(u_k) + 1)
 
   if(is.null(u_k)){
-    bin <- function(x) 2 * pnorm(x, mean=mean, sd=1, lower.tail=F) - power
+    bin <- function(x) 2 * pnorm(x, mean=0, sd=1, lower.tail=F) - power
   } else {
-    bin <- function(x) 1 - power - pmvnorm(lower=c(-u_k, -x),
-                                           upper=c(u_k, x),
-                                           mean=mean, corr=corr,
+    bin <- function(x) 1 - power - pmvnorm(lower=c(u_k[, 1], -x),
+                                           upper=c(u_k[, 2], x),
+                                           mean=rep(0, nrow(u_k) + 1),
+                                           corr=corr,
                                            algorithm=algorithm)
   }
   u <- uniroot(bin, c(0, 100), tol=tol)

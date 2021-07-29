@@ -4,13 +4,15 @@
 #' corr.mat(1:3/3 * 30)
 #' corr.mat(c(0.1, 0.4, 0.5)*50)
 corr.mat <- function(n_k, rho=1, mis=F, sme=F){
-
   K <- length(n_k)
 
   # Use the mismatch vector and rho to determine
   # Correlation when switching between ANOVA and ANCOVA
-  if(length(mis) == 1) mis <- rep(mis, K)
-  rho.switch <- which(!is.na(rho))
+  if(length(mis) == 1){
+    mis <- rep(mis, K)
+  } else {
+    if(length(mis) != K) stop()
+  }
   rho.vec <- rep(1, K)
   rho.vec[mis] <- 0
   rho.mat <- rho.vec %*% t(rho.vec)

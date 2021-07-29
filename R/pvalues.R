@@ -10,12 +10,46 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
   )
 }
 
+.get.pval.from.type <- function(type, lower, upper){
+  if(type == "two-sided"){
+    return(2*min(upper, lower))
+  } else if(type == "lower"){
+    return(upper[1])
+  } else if(type == "upper"){
+    return(lower[1])
+  }
+}
+
 .check.inputs <- function(u_k, ...){
   dim <- nrow(u_k) + 1
   args <- list(...)
   for(arg in args){
     if(!length(arg) %in% c(1, dim)) stop()
   }
+}
+
+.pmvnorm.trycatch <- function(bounds, ...){
+  result <- pmvnorm(lower=bounds[, 1], upper=bounds[, 2],
+                    ..., algorithm=Miwa(steps=1000))
+  if(is.nan(result)){
+    result <- pmvnorm(lower=bounds[, 1], upper=bounds[, 2],
+                      ..., algorithm=GenzBretz(abseps=1e-8))
+  }
+  # Some of the values returned are negative, just from precision
+  # issues. Need to take max of 0 and p-value.
+  return(max(result, 0))
+}
+
+.pmvnorm.list <- function(blocks, ...){
+
+  if(!is.list(blocks)) blocks <- list(blocks)
+  val <- 0
+
+  for(bound in blocks){
+    result <- .pmvnorm.trycatch(bounds=bound, ...)
+    val <- val + result
+  }
+  return(val)
 }
 
 #' Get the probability of rejecting at stage k.
@@ -45,24 +79,16 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
     p.lower <- pnorm(u_k[K, 1], lower.tail=T)
     p.upper <- pnorm(u_k[K, 2], lower.tail=F)
   } else {
-    lower.prev <- u_k[1:(K-1), 1]
-    upper.prev <- u_k[1:(K-1), 2]
+    prev <- u_k[1:(K-1), ]
 
     lower.K <- u_k[K, 1]
     upper.K <- u_k[K, 2]
 
-    p.lower <- pmvnorm(
-      lower=c(lower.prev, -Inf),
-      upper=c(upper.prev, lower.K),
-      corr=corr,
-      algorithm=Miwa(steps=1000)
-    )
-    p.upper <- pmvnorm(
-      lower=c(lower.prev, upper.K),
-      upper=c(upper.prev, Inf),
-      corr=corr,
-      algorithm=Miwa(steps=1000)
-    )
+    lower.block <- rbind(prev, c(-Inf, lower.K))
+    upper.block <- rbind(prev, c(upper.K, Inf))
+
+    p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr)
+    p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr)
   }
   return(c(p.lower, p.upper))
 }
@@ -87,27 +113,35 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' n_k1 <- c(10, 20, 30, 40)
 #' n_k2 <- c(10, 20)
 #'
-#' ancova1 <- c(F, F, F, F)
-#' ancova2 <- c(F, T)
-#'
-#' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1,
-#'               ancova_monitor=ancova1, ancova_test=F, last_stage=T)
+#' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1, rho=0.1,
+#'               ancova_monitor=F, ancova_test=F, last_stage=T)
 #' # 0.05000002
-#' get.pvalue.sw(obs=2.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=ancova1,
-#'               last_stage=T)
-#' # 0.0247869
-#' get.pvalue.sw(obs=1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=ancova1,
+#' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1, rho=0.1,
+#'               ancova_monitor=F, ancova_test=T, last_stage=T)
+#' # 0.06235481
+#' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1, rho=0.9,
+#'               ancova_monitor=F, ancova_test=T, last_stage=T)
+#' # 0.05304498
+#' get.pvalue.sw(obs=1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=F,
 #'               last_stage=T)
 #' # 0.135164
-#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=ancova1,
+#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=F,
 #'               last_stage=T)
 #' # 0.135164
-#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:4,], n_k=n_k1, ancova_monitor=ancova1,
+#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=F,
 #'               rho=0.8, last_stage=T)
 #' # 0.1399254
-#' get.pvalue.sw(obs=2.963132, u_k=u_k1[1:2,], n_k=n_k2, ancova_monitor=ancova2,
+#' get.pvalue.sw(obs=2.35, u_k=matrix(u_k1[1:1,], nrow=1),
+#'               n_k=n_k2, ancova_monitor=F,
+#'               rho=0.8, last_stage=T)
+#' 0.01877924
+#' get.pvalue.sw(obs=qnorm(0.975), u_k=NULL,
+#'               n_k=c(10), ancova_monitor=F,
+#'               rho=0.9, last_stage=T)
+#' # 0.05
+#' get.pvalue.sw(obs=qnorm(0.975), u_k=matrix(u_k1[1:1,], nrow=1),
+#'               n_k=n_k2, ancova_monitor=T,
 #'               rho=0.8, last_stage=F)
-#' # 0.005240675
 get.pvalue.sw <- function(obs, u_k, n_k, rho=1,
                           ancova_monitor=F,
                           ancova_test=T,
@@ -118,15 +152,13 @@ get.pvalue.sw <- function(obs, u_k, n_k, rho=1,
   # K is not necessarily the number of stages, it is
   # the number of hypothesis tests being conducted.
   K <- length(n_k)
-  if(length(ancova_monitor) == 1) ancova_monitor <- rep(ancova_monitor, K)
+  switch <- ancova_monitor != ancova_test
 
-  # If in the last stage, replace whatever was going to happen with monitoring
-  # because we ignore the last test in the ordering.
-  if(last_stage){
-    ancova_monitor[K] <- ancova_test
-  }
-  if(!last_stage){
+  if(!last_stage & switch){
     if(nrow(u_k) != length(n_k)) stop()
+  }
+  if(last_stage & !is.null(u_k)){
+    if(nrow(u_k) != (length(n_k)-1)) stop()
   }
 
   p.upper.tot <- 0
@@ -135,7 +167,7 @@ get.pvalue.sw <- function(obs, u_k, n_k, rho=1,
   for(i in 1:K){
     if(i == 1){
 
-      if(nrow(u_k) == 0){ # reject at first stage
+      if(is.null(u_k)){ # reject at first stage
         p.lower <- pnorm(obs, lower.tail=T)
         p.upper <- pnorm(obs, lower.tail=F)
       } else {
@@ -145,87 +177,66 @@ get.pvalue.sw <- function(obs, u_k, n_k, rho=1,
       }
 
     } else {
-
-      lower.prev <- u_k[1:(i-1), 1]
-      upper.prev <- u_k[1:(i-1), 2]
-
       if(i < K){
-        corr.i <- corr.mat(n_k[1:i],
-                           rho=rho,
-                           mis=ancova_monitor[1:i])
+
+        corr.i <- corr.mat(n_k[1:i], rho=rho)
         p.reject <- .reject.prob.k(u_k[1:i, ], corr=corr.i)
         p.lower <- p.reject[1]
         p.upper <- p.reject[2]
+
       } else {
-        if(last_stage){
 
-          corr.i <- corr.mat(n_k,
-                             rho=rho,
-                             mis=ancova_monitor)
+        prev <- u_k[1:(i-1), ]
 
-          p.lower <- pmvnorm(
-            lower=c(lower.prev, -Inf),
-            upper=c(upper.prev, obs),
-            corr=corr.i,
-            algorithm=Miwa(steps=1000)
-          )
-          p.upper <- pmvnorm(
-            lower=c(lower.prev, obs),
-            upper=c(upper.prev, Inf),
-            corr=corr.i,
-            algorithm=Miwa(steps=1000)
-          )
+        if(last_stage | !switch){
+
+          if(!switch){
+            mis <- rep(F, K)
+          } else {
+            # If last stage and switch
+            mis <- c(rep(F, K-1), T)
+          }
+
+          corr.i <- corr.mat(n_k, rho=rho, mis=mis)
+
+          lower.block <- rbind(prev, c(-Inf, obs))
+          upper.block <- rbind(prev, c(obs, Inf))
+
         } else {
-          browser()
-
-          # THIS IS WHAT I HAD OVERLOOKED BEFORE
-          corr.i <- corr.mat(c(n_k, n_k[K]),
-                             rho=rho,
-                             mis=c(ancova_monitor, ancova_test))
+          corr.i <- corr.mat(n_k=c(n_k, n_k[K]), rho=rho,
+                             mis=c(rep(F, i), switch))
 
           l.here <- u_k[K, 1]
           u.here <- u_k[K, 2]
 
-          p.lower.1 <- pmvnorm(
-            lower=c(lower.prev, -Inf, -Inf),
-            upper=c(upper.prev, l.here, obs),
-            corr=corr.i,
-            algorithm=Miwa(steps=1000)
-          )
-          p.lower.2 <- pmvnorm(
-            lower=c(lower.prev, u.here, -Inf),
-            upper=c(upper.prev, Inf, obs),
-            corr=corr.i,
-            algorithm=Miwa(steps=1000)
-          )
-          p.upper.1 <- pmvnorm(
-            lower=c(lower.prev, -Inf, obs),
-            upper=c(upper.prev, l.here, Inf),
-            corr=corr.i,
-            algorithm=Miwa(steps=1000)
-          )
-          p.upper.2 <- pmvnorm(
-            lower=c(lower.prev, u.here, obs),
-            upper=c(upper.prev, Inf, Inf),
-            corr=corr.i,
-            algorithm=Miwa(steps=1000)
-          )
-          p.lower <- p.lower.1 + p.lower.2
-          p.upper <- p.upper.1 + p.upper.2
+          lower.reject <- c(-Inf, l.here)
+          upper.reject <- c(u.here, Inf)
+
+          lower.tail <- c(-Inf, obs)
+          upper.tail <- c(obs, Inf)
+
+          lower.block.1 <- rbind(prev, lower.reject, lower.tail)
+          upper.block.1 <- rbind(prev, upper.reject, upper.tail)
+
+          lower.block.2 <- rbind(prev, upper.reject, lower.tail)
+          upper.block.2 <- rbind(prev, lower.reject, upper.tail)
+
+          lower.block <- list(lower.block.1, lower.block.2)
+          upper.block <- list(upper.block.1, upper.block.2)
+
         }
+
+        p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr.i)
+        p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr.i)
+
       }
     }
     p.upper.tot <- p.upper.tot + p.upper
     p.lower.tot <- p.lower.tot + p.lower
   }
 
-  if(type == "two-sided"){
-    return(2*min(p.upper.tot, p.lower.tot))
-  } else if(type == "lower"){
-    return(p.upper.tot[1])
-  } else if(type == "upper"){
-    return(p.lower.tot[1])
-  }
+  val <- .get.pval.from.type(type, lower=p.lower.tot, upper=p.upper.tot)
+  return(val)
 }
 
 #' Get p-value using the sample mean ordering.
@@ -245,102 +256,122 @@ get.pvalue.sw <- function(obs, u_k, n_k, rho=1,
 #'
 #' # This gives exactly alpha = 0.05 by putting in the last
 #' # boundary.
-#' n_k1 <- c(10, 20, 30, 40)
-#' n_k2 <- c(10, 20, 30, 40, 40)
-#' n_k3 <- c(10, 20, 20)
+#' n_K <- c(10, 20, 30, 40)
 #'
-#' mis1 <- c(F, F, F, F)
-#' mis2 <- c(F, F, F, F, T)
-#' mis3 <- c(F, F, T)
-#'
-#' get.pvalue.sm(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1, mis=mis1)
+#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+#'               ancova_monitor=F, ancova_test=F, rho=1.0)
+#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+#'               ancova_monitor=F, ancova_test=T, rho=0)
 #' # 0.05000002
-#' get.pvalue.sm(obs=2.5, u_k=u_k1[1:3,], n_k=n_k1, mis=mis1)
-#' # 0.0247869
-#' get.pvalue.sm(obs=1.5, u_k=u_k1[1:3,], n_k=n_k1, mis=mis1)
-#' # 0.135164
-#' get.pvalue.sm(obs=-1.5, u_k=u_k1[1:3,], n_k=n_k1, mis=mis1)
-#' # 0.135164
-#' get.pvalue.sm(obs=-1.5, u_k=u_k1[1:4,], n_k=n_k2, rho=0.8, mis=mis2)
-#' # 0.1491
-#' get.pvalue.sm(obs=2.963132, u_k=u_k1[1:2,], n_k=n_k3, rho=0.8, mis=mis3)
-#' # 0.005240675
-get.pvalue.sm <- function(obs, u_K, n_K, rho=1, mis=F,
+#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+#'               ancova_monitor=F, ancova_test=T, rho=0.4)
+#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+#'               ancova_monitor=F, ancova_test=T, rho=0.8)
+#' for(i in seq(0.01, 0.9, 0.1)){
+#'     print(get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+#'               ancova_monitor=F, ancova_test=T, rho=i))
+#' }
+#'
+#'
+#' get.pvalue.sm(obs=-5/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+#'               ancova_monitor=F, ancova_test=F, rho=1.0)
+get.pvalue.sm <- function(obs, u_K, n_K, rho=1,
+                          ancova_monitor=F,
+                          ancova_test=F,
                           type="two-sided"){
   .check.type(type)
-  .check.inputs(u_k, n_k, mis)
+  .check.inputs(u_K, n_K)
 
-  # K is not necessarily the number of stages, it is
-  # the number of hypothesis tests being conducted.
-  K <- length(n_k)
-  if(length(mis) == 1) mis <- rep(mis, K)
-  mis.end <- all(mis) | all(!mis)
+  # Get max stages
+  K <- length(n_K)
+
+  # Convert sample mean to likelihood ratio
+  lr_obs <- obs * sqrt(n_K[K])
+
+  # Indicator for whether we're switching between ANOVA and ANCOVA
+  # at the testing stage.
+  switch <- ancova_monitor != ancova_test
 
   p.upper.tot <- 0
   p.lower.tot <- 0
 
-  for(i in 1:(K-1)){
+  for(i in 1:K){
 
-    corr.i <- corr.mat(n_k=c(n_k[1:i], n_k[i]),
-                       rho=rho,
-                       mis=c(mis[1:i], mis.end),
-                       sme=c(rep(F, i), T))
+    if(i == 1){
+      prev <- c()
+    } else {
+      prev <- u_K[1:(i-1), ]
+    }
 
-    lower.prev <- u_k[1:(i-1), 1]
-    upper.prev <- u_k[1:(i-1), 2]
+    if(i < K){
 
-    lower.this <- u_k[i, 2]
-    upper.this <-
+      if(switch){
 
-    p.lower <- pmvnorm(
-      lower=c(lower.prev, -Inf),
-      upper=c(upper.prev, obs),
-      Sigma=corr.i,
-      algorithm=Miwa(steps=1000)
-    )
-    p.upper <- pmvnorm(
-      lower=c(lower.prev, obs),
-      upper=c(upper.prev, Inf),
-      Sigma=corr.i,
-      algorithm=Miwa(steps=1000)
-    )
+        corr.i <- corr.mat(n_k=c(n_K[1:i], n_K[i]), rho=rho,
+                           mis=c(rep(F, i), T),
+                           sme=c(rep(F, i), T))
+
+        # Get the critical value for rejection
+        # at this stage.
+        l.here <- u_K[i, 1]
+        u.here <- u_K[i, 2]
+
+        lower.reject <- c(-Inf, l.here)
+        upper.reject <- c(u.here, Inf)
+
+        lower.tail <- c(-Inf, obs)
+        upper.tail <- c(obs, Inf)
+
+        lower.block.1 <- rbind(prev, lower.reject, lower.tail)
+        upper.block.1 <- rbind(prev, upper.reject, upper.tail)
+
+        # When test rejection and observed don't match up
+        # in terms of direction -- should happen rarely.
+        # These probabilities should be really small.
+        lower.block.2 <- rbind(prev, upper.reject, lower.tail)
+        upper.block.2 <- rbind(prev, lower.reject, upper.tail)
+
+        lower.block <- list(lower.block.1, lower.block.2)
+        upper.block <- list(upper.block.1, upper.block.2)
+
+      } else {
+
+        # When performing a test and wanting a SM p-value, (before the last stage)
+        # need to only get the correlation matrix for the Z-statistics
+        # rather than the sample mean because otherwise, it's degenerate.
+
+        corr.i <- corr.mat(n_k=c(n_K[1:i]),
+                           mis=rep(F, i), sme=F)
+
+        l.here <- min(u_K[i, 1], lr_obs)
+        u.here <- max(u_K[i, 2], lr_obs)
+
+        lower.tail <- c(-Inf, l.here)
+        upper.tail <- c(u.here, Inf)
+
+        lower.block <- rbind(prev, lower.tail)
+        upper.block <- rbind(prev, upper.tail)
+
+      }
+
+    } else {
+      corr.i <- corr.mat(n_k=n_K, rho=rho,
+                         mis=c(rep(F, K-1), switch),
+                         sme=c(rep(F, K-1), T))
+
+      lower.block <- rbind(prev, c(-Inf, obs))
+      upper.block <- rbind(prev, c(obs, Inf))
+    }
+
+    p.lower <- .pmvnorm.list(blocks=lower.block, sigma=corr.i)
+    p.upper <- .pmvnorm.list(blocks=upper.block, sigma=corr.i)
 
     p.upper.tot <- p.upper.tot + p.upper
     p.lower.tot <- p.lower.tot + p.lower
-
   }
 
-  corr.i <- corr.mat(n_k=c(n_k[1:i], n_k[i]),
-                     rho=rho,
-                     mis=c(mis[1:i], mis.end),
-                     sme=c(rep(F, i), T))
-
-  lower.prev <- u_k[1:(K-1), 1]
-  upper.prev <- u_k[1:(K-1), 2]
-
-  p.lower <- pmvnorm(
-    lower=c(lower.prev, -Inf),
-    upper=c(upper.prev, obs),
-    Sigma=corr.i,
-    algorithm=Miwa(steps=1000)
-  )
-  p.upper <- pmvnorm(
-    lower=c(lower.prev, obs),
-    upper=c(upper.prev, Inf),
-    Sigma=corr.i,
-    algorithm=Miwa(steps=1000)
-  )
-
-  p.upper.tot <- p.upper.tot + p.upper
-  p.lower.tot <- p.lower.tot + p.lower
-
-  if(type == "two-sided"){
-    return(2*min(p.upper.tot, p.lower.tot))
-  } else if(type == "lower"){
-    return(p.upper.tot[1])
-  } else if(type == "upper"){
-    return(p.lower.tot[1])
-  }
+  val <- .get.pval.from.type(type, lower=p.lower.tot, upper=p.upper.tot)
+  return(val)
 }
 
 #' This is not the function to expose to the user!

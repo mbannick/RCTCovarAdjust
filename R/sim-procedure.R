@@ -15,8 +15,14 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
     total.alpha <- a.func(1)
 
     i <- 0
+
     bounds <- c()
+    # TEMPORARY HACK
+    static.bounds <- c(2.963, 1.969)
     reject <- FALSE
+
+    n_K <- nrow(data_list[[length(data_list)]]$X)
+    n_k <- rates * n_K
 
     while(!reject & (i < length(data_list))){
 
@@ -24,7 +30,7 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
       X <- data_list[[i]]$X
       y <- data_list[[i]]$y
 
-      corr <- corr.mat(rates[1:i])
+      corr <- corr.mat(n_k[1:i])
       rho <- estimate.rho(X, y)
 
       end_stage <- i == length(data_list)
@@ -38,13 +44,14 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
         # Modify correlation matrix
         # to account for switch
         if(match | !correct){
-          corr <- corr.mat(rates[1:i], 1)
+          corr <- corr.mat(n_k[1:i], 1)
         } else {
-          corr <- corr.mat(rates[1:i], rho)
+          corr <- corr.mat(n_k[1:i], rho=rho, mis=c(rep(F, i-1), T))
         }
 
         # Calculate the final boundary and perform test
-        bound <- bound.func(prev_bounds=bounds, corr=corr)
+        # bound <- bound.func(prev_bounds=bounds, corr=corr)
+        bound <- static.bounds[i]
         reject <- abs(test$tstat) >= bound
 
       } else {
@@ -54,8 +61,9 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
 
         # Modify the correlation matrix without
         # any switching, since this is to derive the monitoring bound
-        corr <- corr.mat(rates[1:i])
-        bound <- bound.func(prev_bounds=bounds, corr=corr)
+        corr <- corr.mat(n_k[1:i])
+        # bound <- bound.func(prev_bounds=bounds, corr=corr)
+        bound <- static.bounds[i]
 
         # Perform hypothesis test
         reject <- abs(test$tstat) >= bound
@@ -64,10 +72,11 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
         # is a switch, need to add another test statistic
         # to the stage-wise ordering
         if(!match & reject & correct){
-          corr <- corr.mat(rates[1:i], rho, extra=TRUE)
+          corr <- corr.mat(c(n_k[1:i], n_k[i]), rho=rho,
+                           mis=c(rep(F, i), T))
         }
       }
-      bounds <- c(bounds, bound)
+      bounds <- rbind(bounds, c(-bound, bound))
     }
     if(i == 1){
       u_k <- c()
@@ -75,19 +84,25 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
       if(!match & reject & !end_stage & correct){
         u_k <- bounds
       } else {
-        u_k <- bounds[1:(i-1)]
+        u_k <- matrix(bounds[1:(i-1),], ncol=2)
       }
     }
 
-    final <- final.func(X, y)
-    est <- final$delta
-    ci <- get.confint.sw(est=est, sd_K=final$variance,
-                         n_K=nrow(X), u_k=u_k,
-                         alpha=total.alpha, corr=corr)
-    pval <- get.pvalue.sw(obs=final$tstat, u_k=u_k,
-                          corr=corr)
+    final_est <- final.func(X, y)
+    est <- final_est$delta
+    ci <- get.confint.sw(est=est, sd_K=final_est$variance,
+                         n_k=n_k[1:i], u_k=u_k,
+                         alpha=total.alpha, rho=rho,
+                         ancova_monitor=(monitor == "ancova"),
+                         ancova_test=(final == "ancova"),
+                         last_stage=end_stage)
+    pval <- get.pvalue.sw(obs=final_est$tstat, u_k=u_k,
+                          n_k=n_k[1:i], rho=rho,
+                          ancova_monitor=(monitor == "ancova"),
+                          ancova_test=(final == "ancova"),
+                          last_stage=end_stage)
 
-    return(list(reject=reject, est=est, tstat=final$tstat,
+    return(list(reject=reject, est=est, tstat=final_est$tstat, smean=final_est$smean,
                 ci=ci, pval=pval, bounds=bounds))
   }
   return(procedure)

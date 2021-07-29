@@ -10,23 +10,30 @@ source("~/repos/RCTCovarAdjust/R/constants.R")
 #' fractions, and total sample size.
 #'
 #' @examples
-#' func <- OBF.SPEND(0.05)
+#' func <- obf.spend(0.05)
 #' rates <- 1:4/4
 #'
 #' bound.func <- get.boundary.closure(func, rates)
 #' prev_bounds <- c(4.332634, 2.963132, 2.359044)
-#' corr <- corr.mat(rates)
+#' prev_bounds <- cbind(-prev_bounds, prev_bounds)
+#' corr <- corr.mat(rates, rho=0.8, mis=c(F, F, F, T))
 #' bound.func(prev_bounds, corr)
 get.boundary.closure <- function(a.func, rates){
 
   get.boundary <- function(prev_bounds, corr){
 
-    i <- length(prev_bounds) + 1
+    if(is.null(prev_bounds)){
+      i <- 1
+    } else {
+      i <- nrow(prev_bounds) + 1
+    }
 
-    if(any(dim(corr) != c(i, i))) stop(
-      "Mismatch between previous bounds
+    if(i > 0){
+      if(any(dim(corr) != c(i, i))) stop(
+        "Mismatch between previous bounds
        and correlation dimension."
-    )
+      )
+    }
 
     a_spend <- a.func(rates)
     bound <- solve.boundary(power=a_spend[i],

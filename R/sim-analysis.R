@@ -29,8 +29,10 @@ fit.model.closure <- function(ancova=FALSE){
     vhat <- sum(res**2) / (n - p)
     delta <- est["t",]
     tstat <- sqrt(n) * delta / sqrt(vhat)
+    smean <- tstat / sqrt(n)
 
-    return(list(delta=delta, tstat=tstat, variance=vhat))
+    return(list(delta=delta, tstat=tstat, variance=vhat,
+                smean=smean))
   }
 }
 

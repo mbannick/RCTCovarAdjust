@@ -10,38 +10,26 @@ source("~/repos/RCTCovarAdjust/R/pvalues.R")
 #' @param u_k Boundaries up until the point of rejection
 #'
 #' @examples
-#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
-#' u_k <- cbind(-u_k, u_k)
-#' K <- nrow(u_k)
-#' n_k <- cumsum(rep(10, K))
-#' N <- sum(n_k)
-#'
-#' # Regular correlation
-#' corr.1 <- corr.mat(n_k)
-#'
-#' # Correlation with ANCOVA at last stage
-#' corr.2 <- corr.mat(n_k, rho=0.9, c(F, F, F, T))
-#'
-#' # Correlation with ANCOVA at last stage + extra
-#' corr.3 <- corr.mat(c(n_k, n_k[4]), rho=0.9, c(F, F, F, F, T))
-#' alpha <- 0.05
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:(K-1),])
-#' # 0.1186074 0.5213809
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:(K-1),])
-#' # 0.1151969 0.5247908
-#'
-#' # Monitor with ANOVA and conduct ANCOVA after final ANOVA
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k)
-#'
 #' # ------------------------------------------------------ #
-#' # FIX IT WITH NEW BOUNDS
-#' # These are the alpha spending bounds for alpha = 0.045, so that there's
-#' # some type I error left over.
+#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
+#' u_k1 <- cbind(-u_k, u_k)
+#' u_k2 <- cbind(rep(-Inf, 4), u_k)
 #'
-#' u_k2 <- c(4.415989, 3.023536, 2.408191, 2.056245)
-#' u_k2 <- cbind(-u_k2, u_k2)
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k2)
-get.confint.sw <- function(est, sd_K, n_K, u_k, corr, alpha){
+#' # This gives exactly alpha = 0.05 by putting in the last
+#' # boundary.
+#' n_k1 <- c(10, 20, 30, 40)
+#' n_k2 <- c(10, 20)
+#'
+#' get.confint.sw(est=1, u_k=u_k1[1:3,], sd_K=1,
+#'                n_k=n_k1, alpha=0.05,
+#'                ancova_monitor=F, ancova_test=F, last_stage=T)
+get.confint.sw <- function(est, sd_K, n_k, u_k, alpha,
+                           rho=1, ancova_monitor, ancova_test,
+                           last_stage){
+
+  # Get sample size at the last stage
+  n_K <- n_k[length(n_k)]
+
   # Function to translate effect size into z-statistic
   # At the analysis stage K (not at the first stage)
   get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K
@@ -50,9 +38,15 @@ get.confint.sw <- function(est, sd_K, n_K, u_k, corr, alpha){
   search.fun <- function(eff, low=FALSE){
     z <- get.z(eff)
     if(low){
-      p <- get.pvalue.sw(z, u_k=u_k, corr=corr, type="lower")
+      p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, rho=rho,
+                         ancova_monitor=ancova_monitor,
+                         ancova_test=ancova_test,
+                         last_stage=last_stage, type="lower")
     } else {
-      p <- get.pvalue.sw(z, u_k=u_k, corr=corr, type="upper")
+      p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, rho=rho,
+                         ancova_monitor=ancova_monitor,
+                         ancova_test=ancova_test,
+                         last_stage=last_stage, type="upper")
     }
     return(p - alpha/2)
   }

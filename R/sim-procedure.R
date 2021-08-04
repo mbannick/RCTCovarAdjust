@@ -3,14 +3,45 @@ source("~/repos/RCTCovarAdjust/R/sim-analysis.R")
 source("~/repos/RCTCovarAdjust/R/pvalues.R")
 source("~/repos/RCTCovarAdjust/R/ci.R")
 
-procedure.closure <- function(monitor, final, correct, rates, a.func){
+# Get variances for the monitor function and final function based
+# on potentially known values.
+get.variances <- function(monitor, final, sd_anova=NA, sd_ancova=NA){
+  monitor_var <- NA
+  final_var <- NA
+
+  if(!is.na(sd_anova) | !is.na(sd_ancova)){
+    if(!is.na(sd_anova) & !is.na(sd_ancova)){
+      stop("Need to pass both as non-NA values, or none..")
+    }
+  }
+
+  if(!is.na(sd_anova) & !is.na(sd_ancova)){
+    if(monitor == "anova"){
+      monitor_var <- sd_anova**2
+    } else {
+      monitor_var <- sd_ancova**2
+    }
+    if(final == "anova"){
+      final_var <- sd_anova**2
+    } else {
+      final_var <- sd_ancova**2
+    }
+  }
+  return(list(monitor=monitor_var, final=final_var))
+}
+
+procedure.closure <- function(monitor, final, correct, rates, a.func,
+                              sd_anova=NA, sd_ancova=NA){
 
   bound.func <- get.boundary.closure(a.func=a.func, rates=rates)
 
   procedure <- function(data_list){
 
-    monitor.func <- fit.model.closure(monitor == "ancova")
-    final.func <- fit.model.closure(final == "ancova")
+    vars <- get.variances(monitor=monitor, final=final,
+                          sd_anova=sd_anova, sd_ancova=sd_ancova)
+
+    monitor.func <- fit.model.closure(monitor == "ancova", known_var=vars$monitor)
+    final.func <- fit.model.closure(final == "ancova", known_var=vars$final)
 
     total.alpha <- a.func(1)
 
@@ -102,7 +133,8 @@ procedure.closure <- function(monitor, final, correct, rates, a.func){
                           ancova_test=(final == "ancova"),
                           last_stage=end_stage)
 
-    return(list(reject=reject, est=est, tstat=final_est$tstat, smean=final_est$smean,
+    return(list(reject=reject, est=est, tstat=final_est$tstat,
+                smean=final_est$smean,
                 ci=ci, pval=pval, bounds=bounds))
   }
   return(procedure)

@@ -55,7 +55,9 @@ procedure <- procedure.closure(
   final=T,
   correct=F,
   rates=rates,
-  a.func=a.func)
+  a.func=a.func,
+  sd_anova=(STD**2+0.1**2)**0.5,
+  sd_ancova=STD)
 
 # RUN SIMULATION
 trial_data <- replicate(NSIMS, sim.trial(sim.data), simplify=F)
@@ -63,4 +65,4 @@ result <- pblapply(trial_data, procedure)
 
 # SAVE RESULTS
 result2 <- condense.output(result)
-save(result2, file=sprintf("%s/task_%s_std_%s.RData", OUT_DIR, TASKID, STD))
+save(result2, file=sprintf("%s/task_%s_std_%s-known.RData", OUT_DIR, TASKID, STD))

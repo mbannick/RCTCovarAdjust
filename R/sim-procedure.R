@@ -10,7 +10,7 @@ get.variances <- function(monitor, final, sd_anova=NA, sd_ancova=NA){
   final_var <- NA
 
   if(!is.na(sd_anova) | !is.na(sd_ancova)){
-    if(!is.na(sd_anova) & !is.na(sd_ancova)){
+    if(is.na(sd_anova) | is.na(sd_ancova)){
       stop("Need to pass both as non-NA values, or none..")
     }
   }

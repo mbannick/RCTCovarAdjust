@@ -9,7 +9,7 @@ source("../R/constants.R")
 source("sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
-parallel <- TRUE
+parallel <- FALSE
 
 # GET TASK ID FROM SGE
 if(parallel){
@@ -51,8 +51,8 @@ sim.trial <- sim.trial.closure(
   rates=rates)
 
 procedure <- procedure.closure(
-  monitor=F,
-  final=T,
+  monitor="anova",
+  final="ancova",
   correct=F,
   rates=rates,
   a.func=a.func,

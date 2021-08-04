@@ -3,6 +3,7 @@ docs/
 Rproj.user
 .Rhistory
 .RData
+*.RData
 .Ruserdata
 inst/doc
 .Rproj.user

@@ -13,7 +13,7 @@
 #'
 #' anova(X, y)
 #' ancova(X, y)
-fit.model.closure <- function(ancova=FALSE){
+fit.model.closure <- function(ancova=FALSE, known_var=NA){
   fit.model <- function(X, y){
     if(ancova){
       X.sub <- X
@@ -26,7 +26,12 @@ fit.model.closure <- function(ancova=FALSE){
     est <- solve(t(X.sub) %*% X.sub) %*% t(X.sub) %*% y
     res <- y - X.sub %*% est
 
-    vhat <- sum(res**2) / (n - p)
+    if(is.na(known_var)){
+      vhat <- sum(res**2) / (n - p)
+    } else {
+      vhat <- known_var
+    }
+
     delta <- est["t",]
     tstat <- sqrt(n) * delta / sqrt(vhat)
     smean <- tstat / sqrt(n)

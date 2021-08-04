@@ -1,5 +1,6 @@
 rm(list=ls())
 
+library(pbapply)
 source("../R/sim-analysis.R")
 source("../R/sim-data.R")
 source("../R/sim-procedure.R")
@@ -8,14 +9,14 @@ source("../R/constants.R")
 source("sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
-parallel <- FALSE
+parallel <- TRUE
 
 # GET TASK ID FROM SGE
 if(parallel){
   TASKID <- as.numeric(Sys.getenv("SGE_TASK_ID"))
   args <- commandArgs(trailingOnly=TRUE)
   OUT_DIR <- args[1]
-  STD <- as.integer(args[2])
+  STD <- as.numeric(args[2])
   NSIMS <- as.integer(args[3])
 } else {
   TASKID <- 70
@@ -58,7 +59,7 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(NSIMS, sim.trial(sim.data), simplify=F)
-result <- lapply(trial_data, procedure)
+result <- pblapply(trial_data, procedure)
 
 # SAVE RESULTS
 result2 <- condense.output(result)

@@ -28,8 +28,8 @@ params <- list(
   stages=c(2, 3, 4),
   ifracts=c(2),
   alpha=c(0.05),
-  cov_std=c(0.01, 0.02, 0.03, 0.06, 0.1, 0.2, 0.75),
-  obs_std=c(0.1),
+  cov_std=c(0.1),
+  obs_std=c(0.01, 0.02, 0.03, 0.06, 0.1, 0.2, 0.75),
   intercept=c(1),
   est_var=c(FALSE, TRUE)
 )

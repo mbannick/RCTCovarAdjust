@@ -9,7 +9,7 @@ source("../R/constants.R")
 source("sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
-parallel <- FALSE
+parallel <- TRUE
 
 # GET TASK ID FROM SGE
 if(parallel){

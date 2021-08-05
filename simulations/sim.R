@@ -8,7 +8,7 @@ source("../R/constants.R")
 source("sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
-parallel <- FALSE
+parallel <- TRUE
 
 # GET TASK ID FROM SGE
 if(parallel){
@@ -83,4 +83,4 @@ result <- lapply(trial_data, procedure)
 
 # SAVE RESULTS
 result <- condense.output(result)
-save(result, file=sprintf("%s/params_%s.RData", OUT_DIR, TASKID))
+save(result, file=sprintf("%s/result_%s.RData", OUT_DIR, TASKID))

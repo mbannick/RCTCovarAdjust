@@ -26,21 +26,26 @@ if(parallel){
 set.seed(715)
 
 # PARAMETER GRID
-load(sprintf("%s/params.RData", OUT_DIR))
+param_grid <- read.csv(sprintf("%s/params.csv", OUT_DIR))
 
 # PARAMETER GETTER FOR THIS TASK ID
-param_grid <- expand.grid(params)
 gp <- get.param.closure(TASKID, param_grid)
 
 # GET INFORMATION FRACTION AND ALPHA SPENDING
 # FUNCTION BASED ON ARGUMENTS
 rates <- info.fractions(
   stages=gp("stages"),
-  type=gp("ifracts"))
+  type=gp("ifracts"))$tk
 
 a.func <- spend(
   a=gp("alpha"),
   type=gp("afunc"))
+
+# BOUNDARY FUNCTION -- WILL BE ESTIMATED USING ALPHA-SPENDING IF EST_BOUNDS,
+# OTHERWISE, IT'S BASED ON THE ALPHA-SPENDING FUNCTIONS IN WASSMER-BRANNATH
+b.func <- get.boundary.closure(
+  a.func=a.func,
+  rates=rates)
 
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
@@ -50,16 +55,27 @@ sim.data <- sim.data.closure(
   cov_std=gp("cov_std"),
   obs_std=gp("obs_std"))
 
+# PROCEDURE FOR SIMULATING THE TRIAL DATA BASED ON INFORMATION FRACTIONS
 sim.trial <- sim.trial.closure(
   N=gp("n"),
   rates=rates)
+
+# PROCEDURE FOR ESTIMATING THE VARIANCE, EITHER YOU HAVE KNOWN VALUES
+# OR YOU RETURN NANS SO THAT THEY WILL BE ESTIMATED
+v.func <- variance.closure(
+  cov_std=gp("cov_std"),
+  obs_std=gp("obs_std"),
+  beta=gp("beta"),
+  est_var=gp("est_var"))
 
 procedure <- procedure.closure(
   monitor=gp("monitor"),
   final=gp("final"),
   correct=gp("correct"),
   rates=rates,
-  a.func=a.func)
+  a.func=a.func,
+  v.func=v.func,
+  b.func=b.func)
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)

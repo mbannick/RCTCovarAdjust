@@ -21,8 +21,8 @@ if(parallel){
 } else {
   TASKID <- 70
   OUT_DIR <- "."
-  STD <- 0.001
-  NSIMS <- 10
+  STD <- 0.1
+  NSIMS <- 200
 }
 
 # SET REPRODUCIBLE SEED
@@ -32,32 +32,34 @@ set.seed(SEEDS[TASKID])
 
 # GET INFORMATION FRACTION AND ALPHA SPENDING
 # FUNCTION BASED ON ARGUMENTS
-rates <- c(0.5, 1)
+rates <- c(0.1, 0.5, 1)
 
 a.func <- spend(
   a=0.05,
   type="obf")
 
+BETA <- 1
+
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
   delta=0,
-  beta=1,
+  beta=10,
   b0=1,
   cov_std=0.1,
   obs_std=STD)
 
 sim.trial <- sim.trial.closure(
-  N=100,
+  N=10000,
   rates=rates)
 
 procedure <- procedure.closure(
   monitor="anova",
   final="ancova",
-  correct=F,
+  correct=T,
   rates=rates,
-  a.func=a.func,
-  sd_anova=(STD**2+0.1**2)**0.5,
-  sd_ancova=STD)
+  a.func=a.func)
+  # sd_anova=(STD + 0.1**2*BETA**2)**0.5,
+  # sd_ancova=STD)
 
 # RUN SIMULATION
 trial_data <- replicate(NSIMS, sim.trial(sim.data), simplify=F)

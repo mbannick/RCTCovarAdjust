@@ -59,5 +59,5 @@ estimate.rho <- function(X, y){
   s.anova <- anova(X, y)$variance ** 0.5
   s.ancova <- ancova(X, y)$variance ** 0.5
 
-  return(s.ancova / s.anova)
+  return(min(s.ancova / s.anova, 1.))
 }

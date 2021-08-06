@@ -26,7 +26,7 @@ procedure.closure <- function(monitor, final, correct, rates,
   procedure <- function(data_list){
 
     monitor_var <- v.func(monitor == "ancova")
-    final_var <- v.func(monitor == "ancova")
+    final_var <- v.func(final == "ancova")
 
     monitor.func <- fit.model.closure(monitor == "ancova", known_var=monitor_var)
     final.func <- fit.model.closure(final == "ancova", known_var=final_var)

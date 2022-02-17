@@ -34,8 +34,14 @@ params <- list(
 )
 
 # Save parameter list and number of tasks
-N_JOBS <- expand.grid(params) %>% nrow
-save(params, file=sprintf("%s/params.RData", OUT_DIR))
+param_grid <- expand.grid(params)
+param_grid <- data.table(param_grid)
+param_grid <- param_grid[!(monitor == "anova" & final == "anova" & correct == T)]
+param_grid <- param_grid[!(monitor == "ancova" & final == "ancova" & correct == T)]
+param_grid <- param_grid[!(monitor == "ancova" & final == "anova")]
+
+N_JOBS <- nrow(param_grid)
+write.csv(param_grid, file=sprintf("%s/params.csv", OUT_DIR))
 
 # Submit job arrays
 command <- sprintf("qsub -cwd -j y -o %s -t 1-%s -q normal.q shell.sh sim.R %s %s",

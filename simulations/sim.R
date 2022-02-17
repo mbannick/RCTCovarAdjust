@@ -5,7 +5,7 @@ source("../R/sim-data.R")
 source("../R/sim-procedure.R")
 source("../R/sim-bounds.R")
 source("../R/constants.R")
-source("sim-utils.R")
+source("../simulations/sim-utils.R")
 
 # DEBUGGING AND TESTING SET TO FALSE
 parallel <- FALSE
@@ -18,7 +18,7 @@ if(parallel){
   N_SIMS <- as.integer(args[2])
 } else {
   TASKID <- 70
-  OUT_DIR <- "."
+  OUT_DIR <- "../simulations/"
   N_SIMS <- 10
 }
 

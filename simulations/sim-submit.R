@@ -1,6 +1,7 @@
 # SIMULATION SUBMISSION SCRIPT
 # ----------------------------
 library(magrittr)
+library(data.table)
 
 # Read in command line arguments
 args <- commandArgs(trailingOnly=TRUE)

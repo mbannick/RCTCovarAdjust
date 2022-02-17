@@ -17,7 +17,7 @@ if(parallel){
   OUT_DIR <- args[1]
   N_SIMS <- as.integer(args[2])
 } else {
-  TASKID <- 70
+  TASKID <- 1
   OUT_DIR <- "../simulations/"
   N_SIMS <- 10
 }
@@ -50,10 +50,8 @@ b.func <- get.boundary.closure(
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
   delta=gp("delta"),
-  beta=gp("beta"),
-  b0=gp("intercept"),
-  cov_std=gp("cov_std"),
-  obs_std=gp("obs_std"))
+  rho=gp("rho"),
+  n_cov=gp("n_cov"))
 
 # PROCEDURE FOR SIMULATING THE TRIAL DATA BASED ON INFORMATION FRACTIONS
 sim.trial <- sim.trial.closure(
@@ -63,9 +61,7 @@ sim.trial <- sim.trial.closure(
 # PROCEDURE FOR ESTIMATING THE VARIANCE, EITHER YOU HAVE KNOWN VALUES
 # OR YOU RETURN NANS SO THAT THEY WILL BE ESTIMATED
 v.func <- variance.closure(
-  cov_std=gp("cov_std"),
-  obs_std=gp("obs_std"),
-  beta=gp("beta"),
+  rho=gp("rho"),
   est_var=gp("est_var"))
 
 procedure <- procedure.closure(

@@ -20,18 +20,16 @@ N_SIMS <- args[2]
 params <- list(
   n=c(100, 500),
   delta=c(0.0, 0.1, 0.5),
-  beta=c(0, 0.5, 1.5),
+  n_cov=c(1),
+  rho=c(0.5),
   monitor=c("anova", "ancova"),
   final=c("anova", "ancova"),
   correct=c(FALSE, TRUE),
   afunc=c("obf", "pocock"),
-  stages=c(4),
+  stages=c(3),
   ifracts=c(3),
   alpha=c(0.05),
-  cov_std=c(1),
-  obs_std=c(1),
-  intercept=c(1),
-  est_var=c(FALSE, TRUE)
+  est_var=c(TRUE)
 )
 
 # Save parameter list and number of tasks

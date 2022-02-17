@@ -5,16 +5,16 @@ source("~/repos/RCTCovarAdjust/R/ci.R")
 
 # Get variances for the monitor function and final function based
 # on potentially known values.
-variance.closure <- function(cov_std, obs_std, beta, est_var){
+variance.closure <- function(rho, est_var){
 
   get.variance <- function(ancova=FALSE){
     if(est_var){
       return(NA)
     } else {
       if(ancova){
-        return(obs_std**2)
+        return(rho^2)
       } else {
-        return(obs_std**2 + beta**2 * cov_std**2)
+        return(1)
       }
     }
   }

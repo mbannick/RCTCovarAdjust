@@ -1,6 +1,7 @@
 rm(list=ls())
 library(data.table)
 library(ggplot2)
+library(magrittr)
 
 args <- commandArgs(TRUE)
 in_dir <- args[1]

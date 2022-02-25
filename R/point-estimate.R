@@ -12,17 +12,27 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #'
 #' @examples
 #' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
-#' u_k <- cbind(-u_k, u_k)
-#' K <- 4
-#' n_k <- cumsum(rep(10, K))
-#' N <- sum(n_k)
-#' corr.1 <- corr.mat(n_k)
-#' corr.2 <- corr.mat(n_k, rho=0.9, mis=c(F, F, F, T))
-#' corr.3 <- corr.mat(c(n_k, n_k[4]), rho=0.9, mis=c(F, F, F, F, T))
-#' alpha <- 0.05
-#' get.point.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:(K-1),])
-#' get.point.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:(K-1),])
-get.point.sw <- function(est, sd_K, n_K, u_k, corr, alpha){
+#' u_k1 <- cbind(-u_k, u_k)
+#' u_k2 <- cbind(rep(-Inf, 4), u_k)
+#'
+#' # This gives exactly alpha = 0.05 by putting in the last
+#' # boundary.
+#' n_k1 <- c(10, 20, 30, 40)
+#' n_k2 <- c(10, 20)
+#'
+#' get.point.sw(est=1, u_k=u_k1[1:3,], sd_K=0.2,
+#'              n_k=n_k1, alpha=0.05,
+#'              ancova_monitor=F, ancova_test=F, last_stage=T)
+#'
+#' get.point.sw(est=1, u_k=matrix(u_k1[1,], nrow=1), sd_K=1,
+#'              n_k=c(10), alpha=0.05,
+#'              ancova_monitor=F, ancova_test=F, last_stage=F)
+get.point.sw <- function(est, sd_K, n_k, u_k, alpha,
+                         rho=1, ancova_monitor, ancova_test,
+                         last_stage){
+  # Get sample size at the last stage
+  n_K <- n_k[length(n_k)]
+
   # Function to translate effect size into z-statistic
   # At the analysis stage K (not at the first stage)
   get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K
@@ -30,10 +40,14 @@ get.point.sw <- function(est, sd_K, n_K, u_k, corr, alpha){
   # Create a function to translate the estimate to a z-statistic
   search.fun <- function(eff){
     z <- get.z(eff)
-    p <- get.pvalue.sw(z, u_k=u_k, corr=corr, type="lower")
+    p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, rho=rho,
+                       ancova_monitor=ancova_monitor,
+                       ancova_test=ancova_test,
+                       last_stage=last_stage, type="lower")
     return(p - 0.5)
   }
+
   # Test out a lot of different mean values to see what the p-value is
-  est <- uniroot(search.fun, lower=-100, upper=100, trace=1)$root
-  return(est)
+  est2 <- uniroot(search.fun, lower=-100, upper=100, trace=1)$root
+  return(est2)
 }

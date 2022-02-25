@@ -2,6 +2,7 @@ source("~/repos/RCTCovarAdjust/R/sim-data.R")
 source("~/repos/RCTCovarAdjust/R/sim-analysis.R")
 source("~/repos/RCTCovarAdjust/R/pvalues.R")
 source("~/repos/RCTCovarAdjust/R/ci.R")
+source("~/repos/RCTCovarAdjust/R/point-estimate.R")
 
 # Get variances for the monitor function and final function based
 # on potentially known values.
@@ -107,16 +108,21 @@ procedure.closure <- function(monitor, final, correct, rates,
                           ancova_monitor=ancova_monitor,
                           ancova_test=ancova_test,
                           last_stage=end_stage)
-    # ci <- get.confint.sw(est=est, sd_K=final_est$variance**0.5,
-    #                      n_k=n_k[1:i], u_k=u_k,
-    #                      alpha=total.alpha, rho=rho,
-    #                      ancova_monitor=(monitor == "ancova"),
-    #                      ancova_test=(final == "ancova" & correct),
-    #                      last_stage=end_stage)
-    ci <- c(0, 0)
+    ci <- get.confint.sw(est=est, sd_K=final_est$variance**0.5,
+                         n_k=n_k[1:i], u_k=u_k,
+                         alpha=total.alpha, rho=rho,
+                         ancova_monitor=ancova_monitor,
+                         ancova_test=ancova_test,
+                         last_stage=end_stage)
+    point <- get.point.sw(est=est, sd_K=final_est$variance**0.5,
+                          n_k=n_k[1:i], u_k=u_k,
+                          alpha=total.alpha, rho=rho,
+                          ancova_monitor=ancova_monitor,
+                          ancova_test=ancova_test,
+                          last_stage=end_stage)
 
     return(list(reject=reject, est=est, tstat=final_est$tstat,
-                smean=final_est$smean,
+                smean=final_est$smean, point=point,
                 ci=ci, pval=pval, bounds=bounds))
   }
   return(procedure)

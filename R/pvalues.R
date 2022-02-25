@@ -152,7 +152,12 @@ get.pvalue.sw <- function(obs, u_k, n_k, rho=1,
   # K is not necessarily the number of stages, it is
   # the number of hypothesis tests being conducted.
   K <- length(n_k)
-  if(rho == 1.) ancova_test <- F
+
+  if(rho == 1.){
+    ancova_test <- F
+    ancova_monitor <- F
+  }
+
   switch <- ancova_monitor != ancova_test
 
   if(!is.null(u_k)){

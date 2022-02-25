@@ -8,6 +8,7 @@ condense.output <- function(res){
   smean <- sapply(res, function(x) x$smean)
   ci <- sapply(res, function(x) x$ci) %>% t
   pval <- sapply(res, function(x) x$pval)
+  point <- sapply(res, function(x) x$point)
 
   l.bounds <- lapply(res, function(x) x$bounds[, 1])
   u.bounds <- lapply(res, function(x) x$bounds[, 2])
@@ -21,6 +22,7 @@ condense.output <- function(res){
     est=est,
     tstat=tstat,
     smean=smean,
+    point=point,
     ci=ci,
     pval=pval,
     l.bounds=l.bounds,

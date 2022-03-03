@@ -40,7 +40,6 @@ procedure.closure <- function(monitor, final, correct, rates,
 
     n_K <- nrow(data_list[[length(data_list)]]$X)
     n_k <- rates * n_K
-
     while(!reject & (i < length(data_list))){
 
       i <- i + 1

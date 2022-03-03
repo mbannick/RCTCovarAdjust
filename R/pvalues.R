@@ -2,6 +2,7 @@ library(magrittr)
 library(MASS)
 library(mvtnorm)
 source("~/repos/RCTCovarAdjust/R/covariance.R")
+source("~/repos/RCTCovarAdjust/R/boundaries.R")
 
 .check.type <- function(type){
   if(!type %in% c("two-sided", "lower", "upper")) stop(
@@ -16,7 +17,7 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
   } else if(type == "lower"){
     return(upper[1])
   } else if(type == "upper"){
-    return(lower[1])
+    return(upper[1])
   }
 }
 
@@ -74,7 +75,6 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
 
   K <- nrow(u_k)
-
   if(K == 1){
     p.lower <- pnorm(u_k[K, 1], lower.tail=T)
     p.upper <- pnorm(u_k[K, 2], lower.tail=F)
@@ -93,6 +93,64 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
   return(c(p.lower, p.upper))
 }
 
+.one.test.k <- function(obs, u_k, corr=matrix(1)){
+  if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
+  K <- nrow(u_k)
+  if(nrow(corr) != K) stop("Correlation matrix needs to be the same
+                           dimension as the boundaries.")
+  if(K == 1){
+    p.lower <- pnorm(obs, lower.tail=T)
+    p.upper <- pnorm(obs, lower.tail=F)
+  } else {
+    prev <- u_k[1:(K-1), ]
+
+    lower.block <- rbind(prev, c(-Inf, obs))
+    upper.block <- rbind(prev, c(obs, Inf))
+
+    p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr)
+    p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr)
+  }
+
+  return(c(p.lower, p.upper))
+}
+
+.two.tests.k <- function(obs, u_k, corr){
+
+  if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
+  K <- nrow(u_k)
+  if(nrow(corr) != K+1) stop("Correlation matrix needs to be
+                             higher dimension than boundaries.")
+
+  if(K > 1){
+    prev <- u_k[1:(K-1), ]
+  } else {
+    prev <- NULL
+  }
+
+  l.here <- u_k[K, 1] # lower bound at this stage
+  u.here <- u_k[K, 2] # upper bound at this stage
+
+  lower.reject <- c(-Inf, l.here)
+  upper.reject <- c(u.here, Inf)
+
+  lower.tail <- c(-Inf, obs)
+  upper.tail <- c(obs, Inf)
+
+  lower.block.1 <- rbind(prev, lower.reject, lower.tail)
+  upper.block.1 <- rbind(prev, upper.reject, upper.tail)
+
+  lower.block.2 <- rbind(prev, upper.reject, lower.tail)
+  upper.block.2 <- rbind(prev, lower.reject, upper.tail)
+
+  lower.block <- list(lower.block.1, lower.block.2)
+  upper.block <- list(upper.block.1, upper.block.2)
+
+  p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr)
+  p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr)
+
+  return(c(p.lower, p.upper))
+}
+
 #' Get a stage-wise p-value
 #'
 #' @param obs Observed z-statistic
@@ -104,148 +162,120 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #'
 #' @examples
 #' # OBF boundaries
-#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
-#' u_k1 <- cbind(-u_k, u_k)
-#' u_k2 <- cbind(rep(-Inf, 4), u_k)
+#' bounds_2 <- get.bound(2, obf=T)
+#' bounds_3 <- get.bound(3, obf=T)
+#' bounds_4 <- get.bound(4, obf=T)
 #'
-#' # This gives exactly alpha = 0.05 by putting in the last
-#' # boundary.
-#' n_k1 <- c(10, 20, 30, 40)
+#' u_k2 <- cbind(-bounds_2, bounds_2)
+#' u_k3 <- cbind(-bounds_3, bounds_3)
+#' u_k4 <- cbind(-bounds_4, bounds_4)
+#'
 #' n_k2 <- c(10, 20)
+#' n_k3 <- c(10, 20, 30)
+#' n_k4 <- c(10, 20, 30, 40)
 #'
-#' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1, rho=0.1,
+#' get.pvalue.sw(obs=qnorm(0.975),
+#'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
+#'               k_r=1, n_k=c(10), last_stage=T)
+#' # 0.05
+#' get.pvalue.sw(obs=qnorm(0.975),
+#'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
+#'               k_r=1, n_k=c(10), last_stage=T, rho=0.9)
+#' #
+#' get.pvalue.sw(obs=u_k2[2, 1], u_k=u_k2, k_r=2, n_k=n_k2, rho=1,
+#'               last_stage=T)
+#' # 0.04999942
+#' get.pvalue.sw(obs=u_k3[3, 1], u_k=u_k3, k_r=3, n_k=n_k3, rho=1,
+#'               last_stage=T)
+#' # 0.05000007
+#' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=1,
 #'               ancova_monitor=F, ancova_test=F, last_stage=T)
-#' # 0.05000002
-#' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1, rho=0.1,
+#' # 0.05000162
+#' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=0.1,
 #'               ancova_monitor=F, ancova_test=T, last_stage=T)
-#' # 0.06235481
-#' get.pvalue.sw(obs=u_k1[4,][1], u_k=u_k1[1:3,], n_k=n_k1, rho=0.9,
+#' # 0.0628575
+#' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=0.9,
 #'               ancova_monitor=F, ancova_test=T, last_stage=T)
-#' # 0.05304498
-#' get.pvalue.sw(obs=1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=F,
+#' # 0.05320006
+#' get.pvalue.sw(obs=1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
 #'               last_stage=T)
-#' # 0.135164
-#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=F,
+#' # 0.1355388
+#' get.pvalue.sw(obs=-1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
 #'               last_stage=T)
-#' # 0.135164
-#' get.pvalue.sw(obs=-1.5, u_k=u_k1[1:3,], n_k=n_k1, ancova_monitor=F,
-#'               rho=0.8, last_stage=T)
-#' # 0.1399254
-#' get.pvalue.sw(obs=2.35, u_k=matrix(u_k1[1:1,], nrow=1),
+#' # 0.1355388
+#' get.pvalue.sw(obs=-1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
+#'               last_stage=T, rho=0.9)
+#' # 0.1380762
+#' get.pvalue.sw(obs=2.35, u_k=matrix(u_k4[1:2,], nrow=2), k_r=2,
 #'               n_k=n_k2, ancova_monitor=F,
 #'               rho=0.8, last_stage=T)
-#' 0.01877924
-#' get.pvalue.sw(obs=qnorm(0.975), u_k=NULL,
-#'               n_k=c(10), ancova_monitor=F,
-#'               rho=0.9, last_stage=T)
-#' # 0.05
-#' get.pvalue.sw(obs=qnorm(0.975), u_k=matrix(u_k1[1:1,], nrow=1),
-#'               n_k=n_k2, ancova_monitor=T,
-#'               rho=0.8, last_stage=F)
-get.pvalue.sw <- function(obs, u_k, n_k, rho=1,
+#' 0.01879755
+get.pvalue.sw <- function(obs, u_k, n_k, k_r,
+                          rho=1,
                           ancova_monitor=F,
                           ancova_test=T,
                           last_stage=F,
                           type="two-sided"){
   .check.type(type)
 
-  # K is not necessarily the number of stages, it is
-  # the number of hypothesis tests being conducted.
-  K <- length(n_k)
-
+  # If rho is 1, that means that ANCOVA == ANOVA.
   if(rho == 1.){
     ancova_test <- F
     ancova_monitor <- F
   }
 
+  # Indicator for switching between ANOVA and ANCOVA
+  # at the last stage.
   switch <- ancova_monitor != ancova_test
 
-  if(!is.null(u_k)){
-    if(!last_stage & switch){
-      if(nrow(u_k) != length(n_k)) stop()
-    }
-    if(last_stage & !is.null(u_k)){
-      if(nrow(u_k) != (length(n_k)-1)) stop()
+  if(k_r < 1) stop("Need to have rejected at stage 1 or higher.")
+
+  if(nrow(u_k) != k_r) stop("There need to be as many bounds
+                            as the stage at which you rejected, k_r.")
+
+  if(length(n_k) != k_r) stop("There need to be as many sample sizes
+                            as the stage at which you rejected, k_r.")
+  if(k_r == 1){
+    # Rejected at the first stage
+    if(!switch){
+      final.p <- .one.test.k(obs=obs, u_k=u_k[1,])
+    } else {
+      # Switch between methods
+      corr <- corr.mat(rep(n_k[1], 2), rho=rho, mis=c(F, T))
+      final.p <- .two.tests.k(obs=obs, u_k=u_k[1,], corr=corr)
     }
   } else {
-    if(length(n_k) != 1) stop()
-  }
+    # Rejected at some time beyond the first stage
+    final.p <- c(0, 0)
 
-  p.upper.tot <- 0
-  p.lower.tot <- 0
-
-  for(i in 1:K){
-    if(i == 1){
-
-      if(is.null(u_k)){ # reject at first stage
-        p.lower <- pnorm(obs, lower.tail=T)
-        p.upper <- pnorm(obs, lower.tail=F)
+    for(i in 1:k_r){
+      if(i == 1){
+        p.i <- .reject.prob.k(u_k[1, ], corr=matrix(1))
+      } else if(i < k_r){
+        corr <- corr.mat(n_k[1:i])
+        p.i <- .reject.prob.k(u_k[1:i,], corr=corr)
       } else {
-        p.reject <- .reject.prob.k(u_k[i, ], corr=matrix(1))
-        p.lower <- p.reject[1]
-        p.upper <- p.reject[2]
-      }
-
-    } else {
-      if(i < K){
-
-        corr.i <- corr.mat(n_k[1:i], rho=rho)
-        p.reject <- .reject.prob.k(u_k[1:i, ], corr=corr.i)
-        p.lower <- p.reject[1]
-        p.upper <- p.reject[2]
-
-      } else {
-
-        prev <- u_k[1:(i-1), ]
-
-        if(last_stage | !switch){
-
-          if(!switch){
-            mis <- rep(F, K)
+        if(last_stage){
+          if(switch){
+            corr <- corr.mat(n_k[1:k_r], rho=rho, mis=c(rep(F, k_r-1), T))
           } else {
-            # If last stage and switch
-            mis <- c(rep(F, K-1), T)
+            corr <- corr.mat(n_k[1:k_r], rho=rho, mis=rep(F, k_r))
           }
-
-          corr.i <- corr.mat(n_k, rho=rho, mis=mis)
-
-          lower.block <- rbind(prev, c(-Inf, obs))
-          upper.block <- rbind(prev, c(obs, Inf))
-
+          p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr)
         } else {
-          corr.i <- corr.mat(n_k=c(n_k, n_k[K]), rho=rho,
-                             mis=c(rep(F, i), switch))
-
-          l.here <- u_k[K, 1]
-          u.here <- u_k[K, 2]
-
-          lower.reject <- c(-Inf, l.here)
-          upper.reject <- c(u.here, Inf)
-
-          lower.tail <- c(-Inf, obs)
-          upper.tail <- c(obs, Inf)
-
-          lower.block.1 <- rbind(prev, lower.reject, lower.tail)
-          upper.block.1 <- rbind(prev, upper.reject, upper.tail)
-
-          lower.block.2 <- rbind(prev, upper.reject, lower.tail)
-          upper.block.2 <- rbind(prev, lower.reject, upper.tail)
-
-          lower.block <- list(lower.block.1, lower.block.2)
-          upper.block <- list(upper.block.1, upper.block.2)
-
+          if(switch){
+            corr <- corr.mat(c(n_k[1:k_r], n_k[k_r]), rho=rho, mis=c(rep(F, k_r), T))
+            p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr)
+          } else {
+            corr <- corr.mat(c(n_k[1:k_r]))
+            p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr)
+          }
         }
-
-        p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr.i)
-        p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr.i)
-
       }
+      final.p <- final.p + p.i
     }
-    p.upper.tot <- p.upper.tot + p.upper
-    p.lower.tot <- p.lower.tot + p.lower
   }
-
-  val <- .get.pval.from.type(type, lower=p.lower.tot, upper=p.upper.tot)
+  val <- .get.pval.from.type(type, lower=final.p[1], upper=final.p[2])
   return(val)
 }
 

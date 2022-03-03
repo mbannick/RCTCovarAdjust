@@ -1,5 +1,7 @@
 rm(list=ls())
 
+setwd("~/repos/RCTCovarAdjust/simulations/")
+
 source("../R/sim-analysis.R")
 source("../R/sim-data.R")
 source("../R/sim-procedure.R")
@@ -17,9 +19,9 @@ if(parallel){
   OUT_DIR <- args[1]
   N_SIMS <- as.integer(args[2])
 } else {
-  TASKID <- 861
-  OUT_DIR <- "../simulations/"
-  N_SIMS <- 17
+  TASKID <- 490
+  OUT_DIR <- "/Users/marlena/Documents/FileZilla/rct/run-17-02-22-5"
+  N_SIMS <- 10
 }
 
 # SET REPRODUCIBLE SEED
@@ -75,12 +77,10 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
-for(i in 1:length(trial_data)){
-  print(i)
-  procedure(trial_data[[i]])
-}
 result <- lapply(trial_data, procedure)
+print(result[[1]]$smean)
 
-# SAVE RESULTS
-result <- condense.output(result)
-save(result, file=sprintf("%s/params_%s.RData", OUT_DIR, TASKID))
+#
+# # SAVE RESULTS
+# result <- condense.output(result)
+# save(result, file=sprintf("%s/params_%s.RData", OUT_DIR, TASKID))

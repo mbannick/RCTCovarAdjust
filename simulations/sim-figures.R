@@ -1,7 +1,7 @@
 library(data.table)
 library(ggplot2)
 
-df <- fread("/Users/marlena/Documents/FileZilla/rct/run-17-02-22-6/summary.csv")
+df <- fread("/Users/marlena/Documents/FileZilla/rct/run-24-02-22-2/summary.csv")
 df[, type := factor(type, levels=c("un-adjusted", "adjusted",
                                    "inconsistent, naive", "inconsistent, corrected"))]
 
@@ -12,7 +12,7 @@ df[, upper := power + qnorm(0.975) * std]
 
 # Type I Error Plot
 
-pdf("~/OneDrive/Documents/2021-2022/BIOST 600-noah/type1error.pdf", height=8, width=14)
+pdf("~/OneDrive/Documents/2021-2022/BIOST 600-noah/type1error-2.pdf", height=8, width=14)
 ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho, y=power, color=type, linetype=afunc)) +
   facet_grid(afunc ~ n) +
   geom_point() +

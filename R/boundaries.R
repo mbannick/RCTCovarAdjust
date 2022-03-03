@@ -5,6 +5,43 @@ library(mvtnorm)
 source("~/repos/RCTCovarAdjust/R/constants.R")
 source("~/repos/RCTCovarAdjust/R/covariance.R")
 
+.get.power <- function(c, K, obf=FALSE, rho=1){
+
+  rates <- (1:K)/K
+  u_k <- rep(c, K)
+
+  if(obf) u_k <- u_k / sqrt(1:K)
+
+  Sigma <- corr.mat(rates, rho=rho)
+  val <- 1 - pmvnorm(lower=-u_k,
+                     upper=u_k,
+                     mean=rep(0, K), corr=Sigma,
+                     algorithm=Miwa(steps=1000))
+
+  return(val)
+}
+
+#' Get boundaries
+#'
+#' @param K number of stages
+#' @param obf O'Brien-Fleming bounds (TRUE) or Pocock (FALSE)
+#' @param rho Reduction in variance due to ANCOVA
+#' @param power Alpha-level
+#'
+#' @examples
+#' get.bound(3, obf=TRUE)
+get.bound <- function(K, obf=FALSE, rho=1, power=0.05){
+
+  f <- function(x) .get.power(x, K=K, obf=obf, rho=rho) - power
+  s <- uniroot(f, interval=c(0, 100))
+
+  if(obf){
+    return(s$root / sqrt(1:K))
+  } else {
+    return(rep(s$root, K))
+  }
+}
+
 #' Root solve for a particular alpha level, two-sided.
 #'
 #' @param power The cumulative type I error (or power generally) to solve for.

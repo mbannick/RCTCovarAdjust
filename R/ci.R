@@ -23,7 +23,7 @@ source("~/repos/RCTCovarAdjust/R/pvalues.R")
 #' get.confint.sw(est=1, u_k=u_k1[1:3,], sd_K=1,
 #'                n_k=n_k1, alpha=0.05,
 #'                ancova_monitor=F, ancova_test=F, last_stage=T)
-get.confint.sw <- function(est, sd_K, n_k, u_k, alpha,
+get.confint.sw <- function(est, sd_K, n_k, u_k, k_r, alpha,
                            rho=1, ancova_monitor, ancova_test,
                            last_stage){
 
@@ -33,17 +33,16 @@ get.confint.sw <- function(est, sd_K, n_k, u_k, alpha,
   # Function to translate effect size into z-statistic
   # At the analysis stage K (not at the first stage)
   get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K
-
   # Create a function to translate the estimate to a z-statistic
   search.fun <- function(eff, low=FALSE){
     z <- get.z(eff)
     if(low){
-      p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, rho=rho,
+      p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
                          ancova_monitor=ancova_monitor,
                          ancova_test=ancova_test,
                          last_stage=last_stage, type="lower")
     } else {
-      p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, rho=rho,
+      p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
                          ancova_monitor=ancova_monitor,
                          ancova_test=ancova_test,
                          last_stage=last_stage, type="upper")

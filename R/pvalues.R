@@ -17,7 +17,7 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   } else if(type == "lower"){
     return(upper[1])
   } else if(type == "upper"){
-    return(upper[1])
+    return(lower[1])
   }
 }
 

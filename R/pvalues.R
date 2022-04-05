@@ -15,9 +15,9 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   if(type == "two-sided"){
     return(2*min(upper, lower))
   } else if(type == "lower"){
-    return(upper[1])
-  } else if(type == "upper"){
     return(lower[1])
+  } else if(type == "upper"){
+    return(upper[1])
   }
 }
 
@@ -30,8 +30,12 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 }
 
 .pmvnorm.trycatch <- function(bounds, ...){
-  result <- pmvnorm(lower=bounds[, 1], upper=bounds[, 2],
-                    ..., algorithm=Miwa(steps=1000))
+
+  suppressWarnings(
+    result <- pmvnorm(lower=bounds[, 1], upper=bounds[, 2],
+                      ..., algorithm=Miwa(steps=1000))
+  )
+
   if(is.nan(result)){
     result <- pmvnorm(lower=bounds[, 1], upper=bounds[, 2],
                       ..., algorithm=GenzBretz(abseps=1e-8))
@@ -70,14 +74,15 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 #' corr.2 <- corr.mat(n_k, rho=0.5, mis=c(F, F, T))
 #' .reject.prob.k(u_k=u_k1, corr=corr.1)
 #' .reject.prob.k(u_k=u_k2, corr=corr.1)
-.reject.prob.k <- function(u_k, corr){
+.reject.prob.k <- function(u_k, corr, alt){
 
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
 
   K <- nrow(u_k)
+
   if(K == 1){
-    p.lower <- pnorm(u_k[K, 1], lower.tail=T)
-    p.upper <- pnorm(u_k[K, 2], lower.tail=F)
+    p.lower <- pnorm(u_k[K, 1], mean=alt, lower.tail=T)
+    p.upper <- pnorm(u_k[K, 2], mean=alt, lower.tail=F)
   } else {
     prev <- u_k[1:(K-1), ]
 
@@ -87,37 +92,40 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
     lower.block <- rbind(prev, c(-Inf, lower.K))
     upper.block <- rbind(prev, c(upper.K, Inf))
 
-    p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr)
-    p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr)
+    p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr, mean=alt)
+    p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr, mean=alt)
   }
   return(c(p.lower, p.upper))
 }
 
-.one.test.k <- function(obs, u_k, corr=matrix(1)){
+.one.test.k <- function(obs, u_k, alt, corr=matrix(1)){
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
+
   K <- nrow(u_k)
+
   if(nrow(corr) != K) stop("Correlation matrix needs to be the same
                            dimension as the boundaries.")
   if(K == 1){
-    p.lower <- pnorm(obs, lower.tail=T)
-    p.upper <- pnorm(obs, lower.tail=F)
+    p.lower <- pnorm(obs, mean=alt, lower.tail=T)
+    p.upper <- pnorm(obs, mean=alt, lower.tail=F)
   } else {
     prev <- u_k[1:(K-1), ]
 
     lower.block <- rbind(prev, c(-Inf, obs))
     upper.block <- rbind(prev, c(obs, Inf))
 
-    p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr)
-    p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr)
+    p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr, mean=alt)
+    p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr, mean=alt)
   }
 
   return(c(p.lower, p.upper))
 }
 
-.two.tests.k <- function(obs, u_k, corr){
+.two.tests.k <- function(obs, u_k, alt, corr){
 
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
   K <- nrow(u_k)
+
   if(nrow(corr) != K+1) stop("Correlation matrix needs to be
                              higher dimension than boundaries.")
 
@@ -126,6 +134,7 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   } else {
     prev <- NULL
   }
+  # browser()
 
   l.here <- u_k[K, 1] # lower bound at this stage
   u.here <- u_k[K, 2] # upper bound at this stage
@@ -145,8 +154,8 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   lower.block <- list(lower.block.1, lower.block.2)
   upper.block <- list(upper.block.1, upper.block.2)
 
-  p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr)
-  p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr)
+  p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr, mean=alt)
+  p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr, mean=alt)
 
   return(c(p.lower, p.upper))
 }
@@ -178,10 +187,14 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 #'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
 #'               k_r=1, n_k=c(10), last_stage=T)
 #' # 0.05
+#' get.pvalue.sw(obs=qnorm(0.975), alt=qnorm(0.975),
+#'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
+#'               k_r=1, n_k=c(10), last_stage=T)
+#' # 1
 #' get.pvalue.sw(obs=qnorm(0.975),
 #'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
 #'               k_r=1, n_k=c(10), last_stage=T, rho=0.9)
-#' #
+#' # 0.029646
 #' get.pvalue.sw(obs=u_k2[2, 1], u_k=u_k2, k_r=2, n_k=n_k2, rho=1,
 #'               last_stage=T)
 #' # 0.04999942
@@ -211,6 +224,7 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 #'               rho=0.8, last_stage=T)
 #' 0.01879755
 get.pvalue.sw <- function(obs, u_k, n_k, k_r,
+                          alt=0,
                           rho=1,
                           ancova_monitor=F,
                           ancova_test=T,
@@ -223,10 +237,17 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
     ancova_test <- F
     ancova_monitor <- F
   }
-
   # Indicator for switching between ANOVA and ANCOVA
   # at the last stage.
   switch <- ancova_monitor != ancova_test
+
+  if(length(alt) == 1){
+    if(switch & !last_stage){
+      alt <- rep(alt, k_r + 1)
+    } else {
+      alt <- rep(alt, k_r)
+    }
+  }
 
   if(k_r < 1) stop("Need to have rejected at stage 1 or higher.")
 
@@ -235,14 +256,15 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
 
   if(length(n_k) != k_r) stop("There need to be as many sample sizes
                             as the stage at which you rejected, k_r.")
+  # browser()
   if(k_r == 1){
     # Rejected at the first stage
-    if(!switch){
-      final.p <- .one.test.k(obs=obs, u_k=u_k[1,])
+    if((!switch) | last_stage){
+      final.p <- .one.test.k(obs=obs, u_k=u_k[1,], alt=alt)
     } else {
       # Switch between methods
       corr <- corr.mat(rep(n_k[1], 2), rho=rho, mis=c(F, T))
-      final.p <- .two.tests.k(obs=obs, u_k=u_k[1,], corr=corr)
+      final.p <- .two.tests.k(obs=obs, u_k=u_k[1,], corr=corr, alt=alt)
     }
   } else {
     # Rejected at some time beyond the first stage
@@ -250,10 +272,10 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
 
     for(i in 1:k_r){
       if(i == 1){
-        p.i <- .reject.prob.k(u_k[1, ], corr=matrix(1))
+        p.i <- .reject.prob.k(u_k[1, ], corr=matrix(1), alt=alt[1])
       } else if(i < k_r){
         corr <- corr.mat(n_k[1:i])
-        p.i <- .reject.prob.k(u_k[1:i,], corr=corr)
+        p.i <- .reject.prob.k(u_k[1:i,], corr=corr, alt=alt[1:i])
       } else {
         if(last_stage){
           if(switch){
@@ -261,14 +283,14 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
           } else {
             corr <- corr.mat(n_k[1:k_r], rho=rho, mis=rep(F, k_r))
           }
-          p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr)
+          p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i])
         } else {
           if(switch){
             corr <- corr.mat(c(n_k[1:k_r], n_k[k_r]), rho=rho, mis=c(rep(F, k_r), T))
-            p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr)
+            p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i])
           } else {
             corr <- corr.mat(c(n_k[1:k_r]))
-            p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr)
+            p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i])
           }
         }
       }
@@ -277,6 +299,69 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
   }
   val <- .get.pval.from.type(type, lower=final.p[1], upper=final.p[2])
   return(val)
+}
+
+search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
+                          rho, ancova_monitor, ancova_test,
+                          last_stage, low){
+
+  # Get sample size at the last stage
+  n_K <- n_k[length(n_k)]
+
+  # Function to translate effect size into z-statistic
+  # At the analysis stage K (not at the first stage)
+  switch <- ancova_monitor != ancova_test
+  if((rho < 1.0) & switch){
+
+    sd_test <- sd_K
+    sd_monitor <- ifelse(ancova_test, sd_K/rho, sd_K*rho)
+
+    if(!last_stage){
+      # Add another of the sample sizes on to the end
+      n_k <- c(n_k, n_K)
+      sd_k <- c(rep(sd_monitor, k_r), sd_test)
+    } else {
+      sd_k <- c(rep(sd_monitor, k_r-1), sd_test)
+    }
+  }
+  get.z <- function(eff) sqrt(n_k) * (eff) / sd_k
+
+  # Observed test statistic is
+  obs.z <- sqrt(n_K) * (est) / sd_K
+
+  # Create a function to translate the estimate to a z-statistic
+  search.fun <- function(eff){
+
+    test.z <- get.z(eff)
+
+    if(low){
+      p <- get.pvalue.sw(obs.z, alt=test.z, u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
+                         ancova_monitor=ancova_monitor,
+                         ancova_test=ancova_test,
+                         last_stage=last_stage, type="lower")
+    } else {
+      p <- get.pvalue.sw(obs.z, alt=test.z, u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
+                         ancova_monitor=ancova_monitor,
+                         ancova_test=ancova_test,
+                         last_stage=last_stage, type="upper")
+    }
+    return(p - alpha)
+  }
+  browser()
+  lower <- uniroot(search.fun, lower=-100, upper=100, trace=1)$root
+  xs <- seq(-1, 1, by=0.05)
+  ps.L <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
+                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=1.0,
+                                               ancova_monitor=ancova_monitor,
+                                               ancova_test=ancova_test,
+                                               last_stage=last_stage, type="lower"))
+  ps.U <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
+                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=1.0,
+                                               ancova_monitor=ancova_monitor,
+                                               ancova_test=ancova_test,
+                                               last_stage=last_stage, type="upper"))
+
+  return(lower)
 }
 
 #' Get p-value using the sample mean ordering.

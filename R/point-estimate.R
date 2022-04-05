@@ -27,27 +27,11 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' get.point.sw(est=1, u_k=matrix(u_k1[1,], nrow=1), sd_K=1,
 #'              n_k=c(10), alpha=0.05,
 #'              ancova_monitor=F, ancova_test=F, last_stage=F)
-get.point.sw <- function(est, sd_K, n_k, u_k, alpha,
-                         rho=1, ancova_monitor, ancova_test,
-                         last_stage){
-  # Get sample size at the last stage
-  n_K <- n_k[length(n_k)]
-
-  # Function to translate effect size into z-statistic
-  # At the analysis stage K (not at the first stage)
-  get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K
-
-  # Create a function to translate the estimate to a z-statistic
-  search.fun <- function(eff){
-    z <- get.z(eff)
-    p <- get.pvalue.sw(z, u_k=u_k, n_k=n_k, rho=rho,
-                       ancova_monitor=ancova_monitor,
-                       ancova_test=ancova_test,
-                       last_stage=last_stage, type="lower")
-    return(p - 0.5)
-  }
-
-  # Test out a lot of different mean values to see what the p-value is
-  est2 <- uniroot(search.fun, lower=-100, upper=100, trace=1)$root
-  return(est2)
+get.point.sw <- function(est, sd_K, n_k, ...){
+  val <- search.fun.sw(est, sd_K, n_k, alpha=0.5, low=FALSE, ...)
+  # fun <- function(est) search.fun.sw(est, sd_K, n_k, alpha=0.5, low=TRUE, ...)
+  # effs <- seq(-abs(est)*3, abs(est)*3, by=0.05)
+  # lower.vec <- sapply(effs, fun)
+  # plot(lower.vec ~ effs, type='l', ylab="p-value", xlab="effect size")
+  return(val)
 }

@@ -85,15 +85,16 @@ procedure.closure <- function(monitor, final, correct, rates,
       }
       bounds <- rbind(bounds, c(-bound, bound))
     }
-    if(i == 1){
-      u_k <- c()
-    } else {
-      if(!match & reject & !end_stage & correct){
-        u_k <- bounds
-      } else {
-        u_k <- matrix(bounds[1:(i-1),], ncol=2)
-      }
-    }
+    # if(i == 1){
+    #   u_k <- c()
+    # } else {
+    #   u_k <- bounds
+    #   # if(!match & reject & !end_stage & correct){
+    #   #   u_k <- bounds
+    #   # } else {
+    #   #   u_k <- matrix(bounds[1:(i-1),], ncol=2)
+    #   # }
+    # }
     final_est <- final.func(X, y)
     est <- final_est$delta
 
@@ -101,21 +102,21 @@ procedure.closure <- function(monitor, final, correct, rates,
     ancova_test <- final == "ancova"
 
     if(!correct) ancova_test <- ancova_monitor
-
-    pval <- get.pvalue.sw(obs=final_est$tstat, u_k=u_k,
-                          n_k=n_k[1:i], rho=rho,
+    # browser()
+    pval <- get.pvalue.sw(obs=final_est$tstat, u_k=bounds,
+                          n_k=n_k[1:i], k_r=i, rho=rho,
                           ancova_monitor=ancova_monitor,
                           ancova_test=ancova_test,
                           last_stage=end_stage)
     ci <- get.confint.sw(est=est, sd_K=final_est$variance**0.5,
-                         n_k=n_k[1:i], u_k=u_k,
+                         n_k=n_k[1:i], k_r=i, u_k=bounds,
                          alpha=total.alpha, rho=rho,
                          ancova_monitor=ancova_monitor,
                          ancova_test=ancova_test,
                          last_stage=end_stage)
     point <- get.point.sw(est=est, sd_K=final_est$variance**0.5,
-                          n_k=n_k[1:i], u_k=u_k,
-                          alpha=total.alpha, rho=rho,
+                          n_k=n_k[1:i], k_r=i, u_k=bounds,
+                          rho=rho,
                           ancova_monitor=ancova_monitor,
                           ancova_test=ancova_test,
                           last_stage=end_stage)

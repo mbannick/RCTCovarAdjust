@@ -106,16 +106,44 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   if(nrow(corr) != K) stop("Correlation matrix needs to be the same
                            dimension as the boundaries.")
   if(K == 1){
-    p.lower <- pnorm(obs, mean=alt, lower.tail=T)
-    p.upper <- pnorm(obs, mean=alt, lower.tail=F)
+    # Stop in this stage and more negative, or do not stop
+
+    # Probability of not stopping
+    p.notstop <- pnorm(u_k[1, 2], mean=alt, lower.tail=T) -
+                 pnorm(u_k[1, 1], mean=alt, lower.tail=T)
+
+    # Stopping in this stage and more negative
+    p.L.neg <- pnorm(min(obs, u_k[1, 1]), mean=alt, lower.tail=T)
+    p.L.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=T) -
+               pnorm(u_k[1, 2], mean=alt, lower.tail=T)
+
+    p.lower <- p.L.neg + p.L.pos + p.notstop
+
+    # Stop in this stage, and more positive
+    p.U.neg <- pnorm(min(obs, u_k[1, 1]), mean=alt, lower.tail=F) -
+               pnorm(u_k[1, 1], mean=alt, lower.tail=F)
+    p.U.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=F)
+
+    p.upper <- p.U.neg + p.U.pos
   } else {
+
+    # Previous boundaries
     prev <- u_k[1:(K-1), ]
 
-    lower.block <- rbind(prev, c(-Inf, obs))
-    upper.block <- rbind(prev, c(obs, Inf))
+    # Stop in this stage and more negative, or do not stop
+    p.notstop <- rbind(prev, u_k[K,])
+    p.L.neg <- rbind(prev, c(-Inf, min(obs, u_k[K, 1])))
+    p.L.pos <- rbind(prev, c(u_k[K, 1], max(obs, u_k[K, 1])))
 
-    p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr, mean=alt)
-    p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr, mean=alt)
+    # Stop in this stage, and more positive
+    p.U.neg <- rbind(prev, c(min(u_k[K, 1], obs)))
+    p.U.pos <- rbind(prev, c(max(obs, u_k[K, 1]), Inf))
+
+    lower.blocks <- list(p.notstop, p.L.neg, p.L.pos)
+    upper.blocks <- list(p.U.neg, p.U.pos)
+
+    p.lower <- .pmvnorm.list(blocks=lower.blocks, corr=corr, mean=alt)
+    p.upper <- .pmvnorm.list(blocks=upper.blocks, corr=corr, mean=alt)
   }
 
   return(c(p.lower, p.upper))
@@ -134,28 +162,32 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   } else {
     prev <- NULL
   }
-  # browser()
 
-  l.here <- u_k[K, 1] # lower bound at this stage
-  u.here <- u_k[K, 2] # upper bound at this stage
+  l.K <- u_k[K, 1] # lower bound at this stage
+  u.K <- u_k[K, 2] # upper bound at this stage
 
-  lower.reject <- c(-Inf, l.here)
-  upper.reject <- c(u.here, Inf)
+  # Stop in this stage with MONITOR and more negative TEST, or do not stop
+  lower.cross <- c(-Inf, l.here)
+  upper.cross <- c(u.here, Inf)
+  no.cross <- c(l.here, u.here)
 
+  # More negative TEST
   lower.tail <- c(-Inf, obs)
   upper.tail <- c(obs, Inf)
 
-  lower.block.1 <- rbind(prev, lower.reject, lower.tail)
-  upper.block.1 <- rbind(prev, upper.reject, upper.tail)
+  lower.block.1 <- rbind(prev, lower.cross, lower.tail)
+  upper.block.1 <- rbind(prev, upper.cross, upper.tail)
 
-  lower.block.2 <- rbind(prev, upper.reject, lower.tail)
-  upper.block.2 <- rbind(prev, lower.reject, upper.tail)
+  lower.block.2 <- rbind(prev, upper.cross, lower.tail)
+  upper.block.2 <- rbind(prev, lower.cross, upper.tail)
 
-  lower.block <- list(lower.block.1, lower.block.2)
-  upper.block <- list(upper.block.1, upper.block.2)
+  lower.block.3 <- rbind(prev, no.cross, c(-Inf, Inf))
 
-  p.lower <- .pmvnorm.list(blocks=lower.block, corr=corr, mean=alt)
-  p.upper <- .pmvnorm.list(blocks=upper.block, corr=corr, mean=alt)
+  lower.blocks <- list(lower.block.1, lower.block.2, lower.block.3)
+  upper.blocks <- list(upper.block.1, upper.block.2)
+
+  p.lower <- .pmvnorm.list(blocks=lower.blocks, corr=corr, mean=alt)
+  p.upper <- .pmvnorm.list(blocks=upper.blocks, corr=corr, mean=alt)
 
   return(c(p.lower, p.upper))
 }

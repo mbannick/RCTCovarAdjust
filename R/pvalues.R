@@ -98,7 +98,7 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   return(c(p.lower, p.upper))
 }
 
-.one.test.k <- function(obs, u_k, alt, corr=matrix(1)){
+.one.test.k <- function(obs, u_k, alt, corr=matrix(1), last_stage=TRUE){
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
 
   K <- nrow(u_k)
@@ -106,42 +106,54 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   if(nrow(corr) != K) stop("Correlation matrix needs to be the same
                            dimension as the boundaries.")
   if(K == 1){
-    # Stop in this stage and more negative, or do not stop
+    if(last_stage){
+      p.lower <- pnorm(obs, mean=alt, lower.tail=T)
+      p.upper <- pnorm(obs, mean=alt, lower.tail=F)
+    } else {
+      # Stop in this stage and more negative, or do not stop
 
-    # Probability of not stopping
-    p.notstop <- pnorm(u_k[1, 2], mean=alt, lower.tail=T) -
-                 pnorm(u_k[1, 1], mean=alt, lower.tail=T)
+      # Probability of not stopping
+      p.notstop <- pnorm(u_k[1, 2], mean=alt, lower.tail=T) -
+                   pnorm(u_k[1, 1], mean=alt, lower.tail=T)
 
-    # Stopping in this stage and more negative
-    p.L.neg <- pnorm(min(obs, u_k[1, 1]), mean=alt, lower.tail=T)
-    p.L.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=T) -
-               pnorm(u_k[1, 2], mean=alt, lower.tail=T)
+      # Stopping in this stage and more negative
+      p.L.neg <- pnorm(min(obs, u_k[1, 1]), mean=alt, lower.tail=T)
+      p.L.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=T) -
+                 pnorm(u_k[1, 2], mean=alt, lower.tail=T)
 
-    p.lower <- p.L.neg + p.L.pos + p.notstop
+      p.lower <- p.L.neg + p.L.pos + p.notstop
 
-    # Stop in this stage, and more positive
-    p.U.neg <- pnorm(min(obs, u_k[1, 1]), mean=alt, lower.tail=F) -
-               pnorm(u_k[1, 1], mean=alt, lower.tail=F)
-    p.U.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=F)
+      # Stop in this stage, and more positive
+      p.U.neg <- pnorm(min(obs, u_k[1, 1]), mean=alt, lower.tail=F) -
+                 pnorm(u_k[1, 1], mean=alt, lower.tail=F)
+      p.U.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=F)
 
-    p.upper <- p.U.neg + p.U.pos
+      p.upper <- p.U.neg + p.U.pos
+    }
   } else {
 
     # Previous boundaries
     prev <- u_k[1:(K-1), ]
 
-    # Stop in this stage and more negative, or do not stop
-    p.notstop <- rbind(prev, u_k[K,])
-    p.L.neg <- rbind(prev, c(-Inf, min(obs, u_k[K, 1])))
-    p.L.pos <- rbind(prev, c(u_k[K, 1], max(obs, u_k[K, 1])))
+    if(last_stage){
 
-    # Stop in this stage, and more positive
-    p.U.neg <- rbind(prev, c(min(u_k[K, 1], obs)))
-    p.U.pos <- rbind(prev, c(max(obs, u_k[K, 1]), Inf))
+      lower.blocks <- rbind(prev, c(-Inf, obs))
+      upper.blocks <- rbind(prev, c(obs, Inf))
 
-    lower.blocks <- list(p.notstop, p.L.neg, p.L.pos)
-    upper.blocks <- list(p.U.neg, p.U.pos)
+    } else {
 
+      # Stop in this stage and more negative, or do not stop
+      p.notstop <- rbind(prev, u_k[K,])
+      p.L.neg <- rbind(prev, c(-Inf, min(obs, u_k[K, 1])))
+      p.L.pos <- rbind(prev, c(u_k[K, 2], max(obs, u_k[K, 2])))
+
+      # Stop in this stage, and more positive
+      p.U.neg <- rbind(prev, c(min(u_k[K, 1], obs)))
+      p.U.pos <- rbind(prev, c(max(obs, u_k[K, 2]), Inf))
+
+      lower.blocks <- list(p.L.neg, p.L.pos, p.notstop)
+      upper.blocks <- list(p.U.neg, p.U.pos)
+    }
     p.lower <- .pmvnorm.list(blocks=lower.blocks, corr=corr, mean=alt)
     p.upper <- .pmvnorm.list(blocks=upper.blocks, corr=corr, mean=alt)
   }
@@ -167,9 +179,9 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   u.K <- u_k[K, 2] # upper bound at this stage
 
   # Stop in this stage with MONITOR and more negative TEST, or do not stop
-  lower.cross <- c(-Inf, l.here)
-  upper.cross <- c(u.here, Inf)
-  no.cross <- c(l.here, u.here)
+  lower.cross <- c(-Inf, l.K)
+  upper.cross <- c(u.K, Inf)
+  no.cross <- c(l.K, u.K)
 
   # More negative TEST
   lower.tail <- c(-Inf, obs)
@@ -225,9 +237,9 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 #' # 1
 #' get.pvalue.sw(obs=qnorm(0.975),
 #'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
-#'               k_r=1, n_k=c(10), last_stage=T, rho=0.9)
+#'               k_r=1, n_k=c(10), last_stage=F, rho=0.9)
 #' # 0.029646
-#' get.pvalue.sw(obs=u_k2[2, 1], u_k=u_k2, k_r=2, n_k=n_k2, rho=1,
+#' get.pvalue.sw(obs=u_k2[2, 1], u_k=u_k2, k_r=2, n_k=n_k2, rho=1.0,
 #'               last_stage=T)
 #' # 0.04999942
 #' get.pvalue.sw(obs=u_k3[3, 1], u_k=u_k3, k_r=3, n_k=n_k3, rho=1,
@@ -240,7 +252,7 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 #'               ancova_monitor=F, ancova_test=T, last_stage=T)
 #' # 0.0628575
 #' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=0.9,
-#'               ancova_monitor=F, ancova_test=T, last_stage=T)
+#'               ancova_monitor=F, ancova_test=T, last_stage=F)
 #' # 0.05320006
 #' get.pvalue.sw(obs=1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
 #'               last_stage=T)
@@ -288,7 +300,6 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
 
   if(length(n_k) != k_r) stop("There need to be as many sample sizes
                             as the stage at which you rejected, k_r.")
-  # browser()
   if(k_r == 1){
     # Rejected at the first stage
     if((!switch) | last_stage){
@@ -315,14 +326,14 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
           } else {
             corr <- corr.mat(n_k[1:k_r], rho=rho, mis=rep(F, k_r))
           }
-          p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i])
+          p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i], last_stage=TRUE)
         } else {
           if(switch){
             corr <- corr.mat(c(n_k[1:k_r], n_k[k_r]), rho=rho, mis=c(rep(F, k_r), T))
             p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i])
           } else {
             corr <- corr.mat(c(n_k[1:k_r]))
-            p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i])
+            p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i], last_stage=FALSE)
           }
         }
       }
@@ -347,16 +358,19 @@ search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
 
     sd_test <- sd_K
     sd_monitor <- ifelse(ancova_test, sd_K/rho, sd_K*rho)
-
     if(!last_stage){
       # Add another of the sample sizes on to the end
-      n_k <- c(n_k, n_K)
-      sd_k <- c(rep(sd_monitor, k_r), sd_test)
+      n_k_forz <- c(n_k, n_K)
+      sd_k_forz <- c(rep(sd_monitor, k_r), sd_test)
     } else {
-      sd_k <- c(rep(sd_monitor, k_r-1), sd_test)
+      n_k_forz <- n_k
+      sd_k_forz <- c(rep(sd_monitor, k_r-1), sd_test)
     }
+  } else {
+    n_k_forz <- n_k
+    sd_k_forz <- rep(sd_K, k_r)
   }
-  get.z <- function(eff) sqrt(n_k) * (eff) / sd_k
+  get.z <- function(eff) sqrt(n_k_forz) * (eff) / sd_k_forz
 
   # Observed test statistic is
   obs.z <- sqrt(n_K) * (est) / sd_K
@@ -379,21 +393,22 @@ search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
     }
     return(p - alpha)
   }
+  val <- uniroot(search.fun, lower=-500, upper=500, trace=1)$root
   browser()
-  lower <- uniroot(search.fun, lower=-100, upper=100, trace=1)$root
-  xs <- seq(-1, 1, by=0.05)
+  xs <- seq(-5, 5, by=0.05)
   ps.L <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
-                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=1.0,
+                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
                                                ancova_monitor=ancova_monitor,
                                                ancova_test=ancova_test,
                                                last_stage=last_stage, type="lower"))
   ps.U <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
-                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=1.0,
+                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
                                                ancova_monitor=ancova_monitor,
                                                ancova_test=ancova_test,
                                                last_stage=last_stage, type="upper"))
-
-  return(lower)
+  plot(ps.L ~ xs, type='l')
+  lines(ps.U ~ xs, col='blue')
+  return(val)
 }
 
 #' Get p-value using the sample mean ordering.

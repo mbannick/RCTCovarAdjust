@@ -28,7 +28,7 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #'              n_k=c(10), alpha=0.05,
 #'              ancova_monitor=F, ancova_test=F, last_stage=F)
 get.point.sw <- function(est, sd_K, n_k, ...){
-  val <- search.fun.sw(est, sd_K, n_k, alpha=0.5, low=FALSE, ...)
+  val <- search.fun.sw(est, sd_K, n_k, alpha=0.5, low=TRUE, ...)
   # fun <- function(est) search.fun.sw(est, sd_K, n_k, alpha=0.5, low=TRUE, ...)
   # effs <- seq(-abs(est)*3, abs(est)*3, by=0.05)
   # lower.vec <- sapply(effs, fun)

@@ -19,7 +19,7 @@ if(parallel){
 } else {
   TASKID <- 861
   OUT_DIR <- "../simulations/"
-  N_SIMS <- 100
+  N_SIMS <- 2
 }
 
 # SET REPRODUCIBLE SEED
@@ -49,13 +49,13 @@ b.func <- get.boundary.closure(
 
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
-  delta=-.2,
+  delta=gp("delta"),
   rho=gp("rho"),
   n_cov=gp("n_cov"))
 
 # PROCEDURE FOR SIMULATING THE TRIAL DATA BASED ON INFORMATION FRACTIONS
 sim.trial <- sim.trial.closure(
-  N=1000,
+  N=gp("n"),
   rates=rates)
 
 # PROCEDURE FOR ESTIMATING THE VARIANCE, EITHER YOU HAVE KNOWN VALUES
@@ -75,10 +75,12 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
-for(i in 1:length(trial_data)){
-  print(i)
-  procedure(trial_data[[i]])
-}
+# for(i in 1:length(trial_data)){
+#   print(i)
+#   # if(i == 18) {
+#   procedure(trial_data[[i]])
+#   # }
+# }
 result <- lapply(trial_data, procedure)
 
 # SAVE RESULTS

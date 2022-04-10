@@ -36,8 +36,10 @@ fit.model.closure <- function(ancova=FALSE, known_var=NA){
     tstat <- sqrt(n) * delta / sqrt(vhat)
     smean <- tstat / sqrt(n)
 
+    ci <- delta + c(-1, 1) * qnorm(0.975) * sqrt(vhat/n)
+
     return(list(delta=delta, tstat=tstat, variance=vhat,
-                smean=smean))
+                smean=smean, ci=ci))
   }
 }
 

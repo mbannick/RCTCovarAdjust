@@ -9,6 +9,7 @@ condense.output <- function(res){
   ci <- sapply(res, function(x) x$ci) %>% t
   pval <- sapply(res, function(x) x$pval)
   point <- sapply(res, function(x) x$point)
+  naive_ci <- sapply(res, function(x) x$naive_ci) %>% t
 
   l.bounds <- lapply(res, function(x) x$bounds[, 1])
   u.bounds <- lapply(res, function(x) x$bounds[, 2])
@@ -24,6 +25,7 @@ condense.output <- function(res){
     smean=smean,
     point=point,
     ci=ci,
+    naive_ci=naive_ci,
     pval=pval,
     l.bounds=l.bounds,
     u.bounds=u.bounds

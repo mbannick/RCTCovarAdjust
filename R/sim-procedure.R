@@ -37,6 +37,7 @@ procedure.closure <- function(monitor, final, correct, rates,
     i <- 0
     bounds <- c()
     reject <- FALSE
+    # browser()
 
     n_K <- nrow(data_list[[length(data_list)]]$X)
     n_k <- rates * n_K
@@ -82,6 +83,9 @@ procedure.closure <- function(monitor, final, correct, rates,
 
         # Perform hypothesis test
         reject <- abs(test$tstat) >= bound
+        if(reject){
+          crossed_lower <- (test$tstat <= bound)
+        }
       }
       bounds <- rbind(bounds, c(-bound, bound))
     }
@@ -107,23 +111,27 @@ procedure.closure <- function(monitor, final, correct, rates,
                           n_k=n_k[1:i], k_r=i, rho=rho,
                           ancova_monitor=ancova_monitor,
                           ancova_test=ancova_test,
-                          last_stage=end_stage)
+                          last_stage=end_stage,
+                          crossed_lower=crossed_lower)
     ci <- get.confint.sw(est=est, sd_K=final_est$variance**0.5,
                          n_k=n_k[1:i], k_r=i, u_k=bounds,
                          alpha=total.alpha, rho=rho,
                          ancova_monitor=ancova_monitor,
                          ancova_test=ancova_test,
-                         last_stage=end_stage)
+                         last_stage=end_stage,
+                         crossed_lower=crossed_lower)
     point <- get.point.sw(est=est, sd_K=final_est$variance**0.5,
                           n_k=n_k[1:i], k_r=i, u_k=bounds,
                           rho=rho,
                           ancova_monitor=ancova_monitor,
                           ancova_test=ancova_test,
-                          last_stage=end_stage)
+                          last_stage=end_stage,
+                          crossed_lower=crossed_lower)
 
     return(list(reject=reject, est=est, tstat=final_est$tstat,
                 smean=final_est$smean, point=point,
-                ci=ci, pval=pval, bounds=bounds))
+                ci=ci, pval=pval, bounds=bounds,
+                naive_ci=final_est$ci))
   }
   return(procedure)
 }

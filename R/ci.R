@@ -22,7 +22,8 @@ source("~/repos/RCTCovarAdjust/R/pvalues.R")
 #'
 #' get.confint.sw(est=1, u_k=u_k1[1:3,], sd_K=1,
 #'                n_k=n_k1, alpha=0.05,
-#'                ancova_monitor=F, ancova_test=F, last_stage=T)
+#'                ancova_monitor=F, ancova_test=F, last_stage=T,
+#'                crossed_lower=FALSE)
 get.confint.sw <- function(est, sd_K, n_k, alpha, ...){
 
   lower <- search.fun.sw(est, sd_K, n_k, alpha=alpha/2, low=FALSE, ...)

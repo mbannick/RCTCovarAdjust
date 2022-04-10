@@ -121,14 +121,16 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
       p.L.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=T) -
                  pnorm(u_k[1, 2], mean=alt, lower.tail=T)
 
-      p.lower <- p.L.neg + p.L.pos + p.notstop
 
       # Stop in this stage, and more positive
       p.U.neg <- pnorm(min(obs, u_k[1, 1]), mean=alt, lower.tail=F) -
                  pnorm(u_k[1, 1], mean=alt, lower.tail=F)
       p.U.pos <- pnorm(max(obs, u_k[1, 2]), mean=alt, lower.tail=F)
 
+      p.lower <- p.L.neg + p.L.pos
       p.upper <- p.U.neg + p.U.pos
+      if(obs <= u_k[1, 1]) p.upper <- p.upper + p.notstop
+      if(obs >= u_k[1, 2]) p.lower <- p.lower + p.notstop
     }
   } else {
 
@@ -142,17 +144,27 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 
     } else {
 
-      # Stop in this stage and more negative, or do not stop
-      p.notstop <- rbind(prev, u_k[K,])
+      # Stop in this stage and more negative
       p.L.neg <- rbind(prev, c(-Inf, min(obs, u_k[K, 1])))
       p.L.pos <- rbind(prev, c(u_k[K, 2], max(obs, u_k[K, 2])))
 
       # Stop in this stage, and more positive
-      p.U.neg <- rbind(prev, c(min(u_k[K, 1], obs)))
+      p.U.neg <- rbind(prev, c(min(u_k[K, 1], obs), u_k[K, 1]))
       p.U.pos <- rbind(prev, c(max(obs, u_k[K, 2]), Inf))
 
-      lower.blocks <- list(p.L.neg, p.L.pos, p.notstop)
-      upper.blocks <- list(p.U.neg, p.U.pos)
+      # Do not stop
+      p.notstop <- rbind(prev, u_k[K,])
+
+      if(obs <= u_k[K, 1]){
+        lower.blocks <- list(p.L.neg, p.L.pos)
+        upper.blocks <- list(p.U.neg, p.U.pos, p.notstop)
+      } else if(obs >= u_k[K, 2]) {
+        lower.blocks <- list(p.L.neg, p.L.pos, p.notstop)
+        upper.blocks <- list(p.U.neg, p.U.pos)
+      } else {
+        lower.blocks <- list(p.L.neg, p.L.pos)
+        upper.blocks <- list(p.U.neg, p.U.pos)
+      }
     }
     p.lower <- .pmvnorm.list(blocks=lower.blocks, corr=corr, mean=alt)
     p.upper <- .pmvnorm.list(blocks=upper.blocks, corr=corr, mean=alt)
@@ -161,7 +173,7 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   return(c(p.lower, p.upper))
 }
 
-.two.tests.k <- function(obs, u_k, alt, corr){
+.two.tests.k <- function(obs, u_k, alt, corr, crossed_lower=FALSE){
 
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
   K <- nrow(u_k)
@@ -193,10 +205,15 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   lower.block.2 <- rbind(prev, upper.cross, lower.tail)
   upper.block.2 <- rbind(prev, lower.cross, upper.tail)
 
-  lower.block.3 <- rbind(prev, no.cross, c(-Inf, Inf))
+  nocross.block <- rbind(prev, no.cross, c(-Inf, Inf))
 
-  lower.blocks <- list(lower.block.1, lower.block.2, lower.block.3)
-  upper.blocks <- list(upper.block.1, upper.block.2)
+  if(crossed_lower){
+    lower.blocks <- list(lower.block.1, lower.block.2)
+    upper.blocks <- list(upper.block.1, upper.block.2, nocross.block)
+  } else {
+    lower.blocks <- list(lower.block.1, lower.block.2, nocross.block)
+    upper.blocks <- list(upper.block.1, upper.block.2)
+  }
 
   p.lower <- .pmvnorm.list(blocks=lower.blocks, corr=corr, mean=alt)
   p.upper <- .pmvnorm.list(blocks=upper.blocks, corr=corr, mean=alt)
@@ -273,6 +290,7 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
                           ancova_monitor=F,
                           ancova_test=T,
                           last_stage=F,
+                          crossed_lower=FALSE,
                           type="two-sided"){
   .check.type(type)
 
@@ -307,7 +325,8 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
     } else {
       # Switch between methods
       corr <- corr.mat(rep(n_k[1], 2), rho=rho, mis=c(F, T))
-      final.p <- .two.tests.k(obs=obs, u_k=u_k[1,], corr=corr, alt=alt)
+      final.p <- .two.tests.k(obs=obs, u_k=u_k[1,], corr=corr, alt=alt,
+                              crossed_lower=crossed_lower)
     }
   } else {
     # Rejected at some time beyond the first stage
@@ -330,7 +349,8 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
         } else {
           if(switch){
             corr <- corr.mat(c(n_k[1:k_r], n_k[k_r]), rho=rho, mis=c(rep(F, k_r), T))
-            p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i])
+            p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i],
+                                crossed_lower=crossed_lower)
           } else {
             corr <- corr.mat(c(n_k[1:k_r]))
             p.i <- .one.test.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i], last_stage=FALSE)
@@ -346,7 +366,7 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
 
 search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
                           rho, ancova_monitor, ancova_test,
-                          last_stage, low){
+                          last_stage, crossed_lower, low){
 
   # Get sample size at the last stage
   n_K <- n_k[length(n_k)]
@@ -384,30 +404,37 @@ search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
       p <- get.pvalue.sw(obs.z, alt=test.z, u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
                          ancova_monitor=ancova_monitor,
                          ancova_test=ancova_test,
-                         last_stage=last_stage, type="lower")
+                         last_stage=last_stage,
+                         crossed_lower=crossed_lower,
+                         type="lower")
     } else {
       p <- get.pvalue.sw(obs.z, alt=test.z, u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
                          ancova_monitor=ancova_monitor,
                          ancova_test=ancova_test,
-                         last_stage=last_stage, type="upper")
+                         last_stage=last_stage,
+                         crossed_lower=crossed_lower,
+                         type="upper")
     }
     return(p - alpha)
   }
   val <- uniroot(search.fun, lower=-500, upper=500, trace=1)$root
-  browser()
-  xs <- seq(-5, 5, by=0.05)
-  ps.L <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
-                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
-                                               ancova_monitor=ancova_monitor,
-                                               ancova_test=ancova_test,
-                                               last_stage=last_stage, type="lower"))
-  ps.U <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
-                                               u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
-                                               ancova_monitor=ancova_monitor,
-                                               ancova_test=ancova_test,
-                                               last_stage=last_stage, type="upper"))
-  plot(ps.L ~ xs, type='l')
-  lines(ps.U ~ xs, col='blue')
+  # browser()
+  # xs <- seq(-5, 5, by=0.05)
+  # ps.L <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
+  #                                              u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
+  #                                              ancova_monitor=ancova_monitor,
+  #                                              ancova_test=ancova_test,
+  #                                              last_stage=last_stage,
+  #                                              crossed_lower=crossed_lower,
+  #                                              type="lower"))
+  # ps.U <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
+  #                                              u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
+  #                                              ancova_monitor=ancova_monitor,
+  #                                              ancova_test=ancova_test,
+  #                                              crossed_lower=crossed_lower,
+  #                                              last_stage=last_stage, type="upper"))
+  # plot(ps.L ~ xs, type='l')
+  # lines(ps.U ~ xs, col='blue')
   return(val)
 }
 

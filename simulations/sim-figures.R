@@ -2,6 +2,8 @@ library(data.table)
 library(ggplot2)
 
 df <- fread("/Users/marlena/Documents/FileZilla/rct/run-24-02-22-2/summary.csv")
+df <- fread("/Users/marlena/Documents/FileZilla/rct/run-10-04-22-2/summary.csv")
+
 df[, type := factor(type, levels=c("un-adjusted", "adjusted",
                                    "inconsistent, naive", "inconsistent, corrected"))]
 

@@ -47,7 +47,11 @@ procedure.closure <- function(monitor, final, correct, rates,
       X <- data_list[[i]]$X
       y <- data_list[[i]]$y
 
-      rho <- estimate.rho(X, y)
+      if(is.na(monitor_var)){
+        rho <- estimate.rho(X, y)
+      } else {
+        rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))
+      }
 
       end_stage <- i == length(data_list)
       match <- monitor == final

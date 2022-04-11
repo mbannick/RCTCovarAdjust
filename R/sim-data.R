@@ -39,7 +39,8 @@ sim.data.closure <- function(delta, n_cov, rho){
 
 sim.trial.closure <- function(N, rates){
   sim.trial <- function(sim.data){
-    n_cuml <- N * rates
+
+    n_cuml <- floor(N * rates)
     n_k <- c(n_cuml[1], diff(n_cuml))
 
     dat <- lapply(n_k, sim.data)

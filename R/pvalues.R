@@ -269,7 +269,7 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
 #'               ancova_monitor=F, ancova_test=T, last_stage=T)
 #' # 0.0628575
 #' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=0.9,
-#'               ancova_monitor=F, ancova_test=T, last_stage=F)
+#'               ancova_monitor=F, ancova_test=T, last_stage=T)
 #' # 0.05320006
 #' get.pvalue.sw(obs=1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
 #'               last_stage=T)

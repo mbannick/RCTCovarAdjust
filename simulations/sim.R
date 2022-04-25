@@ -19,7 +19,7 @@ if(parallel){
 } else {
   TASKID <- 861
   OUT_DIR <- "../simulations/"
-  N_SIMS <- 2
+  N_SIMS <- 30
 }
 
 # SET REPRODUCIBLE SEED
@@ -50,7 +50,7 @@ b.func <- get.boundary.closure(
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
   delta=gp("delta"),
-  rho=gp("rho"),
+  rho=1,
   n_cov=gp("n_cov"))
 
 # PROCEDURE FOR SIMULATING THE TRIAL DATA BASED ON INFORMATION FRACTIONS

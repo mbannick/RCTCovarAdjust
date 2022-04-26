@@ -17,8 +17,8 @@ if(parallel){
   OUT_DIR <- args[1]
   N_SIMS <- as.integer(args[2])
 } else {
-  TASKID <- 861
-  OUT_DIR <- "../simulations/"
+  TASKID <- 67
+  OUT_DIR <- "~/repos/RCTCovarAdjust/R"
   N_SIMS <- 30
 }
 
@@ -45,12 +45,14 @@ a.func <- spend(
 # OTHERWISE, IT'S BASED ON THE ALPHA-SPENDING FUNCTIONS IN WASSMER-BRANNATH
 b.func <- get.boundary.closure(
   a.func=a.func,
-  rates=rates)
+  rates=rates,
+  est.bounds=TRUE,
+  a.type=gp("afunc"))
 
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
   delta=gp("delta"),
-  rho=1,
+  rho=gp("rho"),
   n_cov=gp("n_cov"))
 
 # PROCEDURE FOR SIMULATING THE TRIAL DATA BASED ON INFORMATION FRACTIONS
@@ -68,6 +70,7 @@ procedure <- procedure.closure(
   monitor=gp("monitor"),
   final=gp("final"),
   correct=gp("correct"),
+  est.bounds=TRUE,
   rates=rates,
   a.func=a.func,
   v.func=v.func,
@@ -75,12 +78,6 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
-# for(i in 1:length(trial_data)){
-#   print(i)
-#   # if(i == 18) {
-#   procedure(trial_data[[i]])
-#   # }
-# }
 result <- lapply(trial_data, procedure)
 
 # SAVE RESULTS

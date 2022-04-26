@@ -22,7 +22,7 @@ variance.closure <- function(rho, est_var){
 }
 
 procedure.closure <- function(monitor, final, correct, rates,
-                              a.func, v.func, b.func){
+                              a.func, v.func, b.func, est.bounds){
 
   procedure <- function(data_list){
 
@@ -37,10 +37,17 @@ procedure.closure <- function(monitor, final, correct, rates,
     i <- 0
     bounds <- c()
     reject <- FALSE
-    # browser()
 
     n_K <- nrow(data_list[[length(data_list)]]$X)
     n_k <- rates * n_K
+    K <- length(n_k)
+
+    if(!est.bounds){
+      rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))
+      corr <- corr.mat(n_k=n_k, rho=rho, mis=c(rep(F, K-1), monitor != final))
+      pre_bounds <- b.func(corr)
+    }
+
     while(!reject & (i < length(data_list))){
 
       i <- i + 1
@@ -70,8 +77,12 @@ procedure.closure <- function(monitor, final, correct, rates,
         }
 
         # Calculate the final boundary and perform test
-        bound <- b.func(prev_bounds=bounds, corr=corr)
-        # bound <- static.bounds[i]
+        if(est.bounds){
+          bound <- b.func(prev_bounds=bounds, corr=corr)
+        } else {
+          bound <- pre_bounds[i]
+        }
+
         reject <- abs(test$tstat) >= bound
 
       } else {
@@ -82,8 +93,11 @@ procedure.closure <- function(monitor, final, correct, rates,
         # Modify the correlation matrix without
         # any switching, since this is to derive the monitoring bound
         corr <- corr.mat(n_k[1:i])
-        bound <- b.func(prev_bounds=bounds, corr=corr)
-        # bound <- static.bounds[i]
+        if(est.bounds){
+          bound <- b.func(prev_bounds=bounds, corr=corr)
+        } else {
+          bound <- pre_bounds[i]
+        }
 
         # Perform hypothesis test
         reject <- abs(test$tstat) >= bound
@@ -93,16 +107,7 @@ procedure.closure <- function(monitor, final, correct, rates,
       }
       bounds <- rbind(bounds, c(-bound, bound))
     }
-    # if(i == 1){
-    #   u_k <- c()
-    # } else {
-    #   u_k <- bounds
-    #   # if(!match & reject & !end_stage & correct){
-    #   #   u_k <- bounds
-    #   # } else {
-    #   #   u_k <- matrix(bounds[1:(i-1),], ncol=2)
-    #   # }
-    # }
+
     final_est <- final.func(X, y)
     est <- final_est$delta
 
@@ -110,7 +115,7 @@ procedure.closure <- function(monitor, final, correct, rates,
     ancova_test <- final == "ancova"
 
     if(!correct) ancova_test <- ancova_monitor
-    # browser()
+
     pval <- get.pvalue.sw(obs=final_est$tstat, u_k=bounds,
                           n_k=n_k[1:i], k_r=i, rho=rho,
                           ancova_monitor=ancova_monitor,

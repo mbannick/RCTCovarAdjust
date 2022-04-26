@@ -5,14 +5,14 @@ library(mvtnorm)
 source("~/repos/RCTCovarAdjust/R/constants.R")
 source("~/repos/RCTCovarAdjust/R/covariance.R")
 
-.get.power <- function(c, K, obf=FALSE, rho=1){
+.get.power <- function(c, rates, obf=FALSE, rho=1){
 
-  rates <- (1:K)/K
+  K <- length(rates)
   u_k <- rep(c, K)
 
   if(obf) u_k <- u_k / sqrt(1:K)
 
-  Sigma <- corr.mat(rates, rho=rho)
+  Sigma <- corr.mat(rates, rho=rho, mis=c(rep(F, K-1), T))
   val <- 1 - pmvnorm(lower=-u_k,
                      upper=u_k,
                      mean=rep(0, K), corr=Sigma,
@@ -30,9 +30,10 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #'
 #' @examples
 #' get.bound(3, obf=TRUE)
-get.bound <- function(K, obf=FALSE, rho=1, power=0.05){
+get.bound <- function(rates, obf=FALSE, rho=1, power=0.05){
 
-  f <- function(x) .get.power(x, K=K, obf=obf, rho=rho) - power
+  K <- length(rates)
+  f <- function(x) .get.power(x, rates=rates, obf=obf, rho=rho) - power
   s <- uniroot(f, interval=c(0, 100))
 
   if(obf){
@@ -40,6 +41,29 @@ get.bound <- function(K, obf=FALSE, rho=1, power=0.05){
   } else {
     return(rep(s$root, K))
   }
+}
+
+get.bound.by.corr <- function(corr, obf=FALSE, power=0.05){
+  K <- nrow(corr)
+  get.power <- function(c){
+
+    u_k <- rep(c, K)
+    if(obf) u_k <- u_k / sqrt(1:K)
+
+    val <- 1 - pmvnorm(lower=-u_k,
+                       upper=u_k,
+                       mean=rep(0, K), corr=corr,
+                       algorithm=Miwa(steps=1000))
+  }
+  f <- function(x) get.power(x) - power
+  s <- uniroot(f, interval=c(0, 100))
+
+  if(obf){
+    return(s$root / sqrt(1:K))
+  } else {
+    return(rep(s$root, K))
+  }
+
 }
 
 #' Root solve for a particular alpha level, two-sided.

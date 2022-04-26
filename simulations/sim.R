@@ -17,8 +17,8 @@ if(parallel){
   OUT_DIR <- args[1]
   N_SIMS <- as.integer(args[2])
 } else {
-  TASKID <- 861
-  OUT_DIR <- "../simulations/"
+  TASKID <- 353
+  OUT_DIR <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
   N_SIMS <- 30
 }
 
@@ -50,7 +50,7 @@ b.func <- get.boundary.closure(
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
   delta=gp("delta"),
-  rho=1,
+  rho=gp("rho"),
   n_cov=gp("n_cov"))
 
 # PROCEDURE FOR SIMULATING THE TRIAL DATA BASED ON INFORMATION FRACTIONS

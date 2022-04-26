@@ -3,7 +3,7 @@ library(data.table)
 library(ggplot2)
 library(magrittr)
 
-# args <- commandArgs(TRUE)
+args <- commandArgs(TRUE)
 in_dir <- args[1]
 # in_dir <- "~/Documents/FileZilla/rct/run-10-04-22-2/"
 # in_dir <- "~/Documents/FileZilla/rct/run-11-04-22-3/"

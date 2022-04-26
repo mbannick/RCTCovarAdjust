@@ -50,7 +50,7 @@ b.func <- get.boundary.closure(
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
   delta=gp("delta"),
-  rho=1,
+  rho=gp("rho"),
   n_cov=gp("n_cov"))
 
 # PROCEDURE FOR SIMULATING THE TRIAL DATA BASED ON INFORMATION FRACTIONS

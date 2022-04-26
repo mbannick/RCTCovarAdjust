@@ -43,8 +43,9 @@ procedure.closure <- function(monitor, final, correct, rates,
     K <- length(n_k)
 
     if(!est.bounds){
+      inflate <- (monitor != final) & correct
       rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))
-      corr <- corr.mat(n_k=n_k, rho=rho, mis=c(rep(F, K-1), monitor != final))
+      corr <- corr.mat(n_k=n_k, rho=rho, mis=c(rep(F, K-1), inflate))
       pre_bounds <- b.func(corr)
     }
 

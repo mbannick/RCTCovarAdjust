@@ -46,7 +46,7 @@ a.func <- spend(
 b.func <- get.boundary.closure(
   a.func=a.func,
   rates=rates,
-  est.bounds=TRUE,
+  est.bounds=gp("est_bounds"),
   a.type=gp("afunc"))
 
 # CLOSURE FUNCTIONS
@@ -70,7 +70,7 @@ procedure <- procedure.closure(
   monitor=gp("monitor"),
   final=gp("final"),
   correct=gp("correct"),
-  est.bounds=TRUE,
+  est.bounds=gp("est_bounds"),
   rates=rates,
   a.func=a.func,
   v.func=v.func,

@@ -19,7 +19,7 @@ if(parallel){
 } else {
   TASKID <- 67
   OUT_DIR <- "~/repos/RCTCovarAdjust/R"
-  N_SIMS <- 30
+  N_SIMS <- 10000
 }
 
 # SET REPRODUCIBLE SEED
@@ -27,6 +27,17 @@ set.seed(715)
 
 # PARAMETER GRID
 param_grid <- read.csv(sprintf("%s/params.csv", OUT_DIR))
+if(!parallel){
+  param_grid <- data.table(param_grid)
+  param_grid <- param_grid[1,]
+  param_grid[, rho := 1]
+  param_grid[, afunc := "pocock"]
+  param_grid[, n := 100]
+  param_grid[, stages := 2]
+  param_grid[, delta := 0.0]
+  param_grid <- data.frame(param_grid)
+  TASKID <- 1
+}
 
 # PARAMETER GETTER FOR THIS TASK ID
 gp <- get.param.closure(TASKID, param_grid)
@@ -78,7 +89,7 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
-result <- lapply(trial_data, procedure)
+result <- mclapply(trial_data, procedure, mc.cores=4)
 
 # SAVE RESULTS
 result <- condense.output(result)

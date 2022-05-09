@@ -25,6 +25,7 @@ procedure.closure <- function(monitor, final, correct, rates,
                               a.func, v.func, b.func, est.bounds){
 
   procedure <- function(data_list){
+    cat(".")
 
     monitor_var <- v.func(monitor == "ancova")
     final_var <- v.func(final == "ancova")

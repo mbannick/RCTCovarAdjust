@@ -18,15 +18,15 @@ N_SIMS <- args[2]
 
 # Parameter grid
 params <- list(
-  n=c(50, 100, 250),
-  delta=c(0.0, 0.1),
+  n=c(100, 250, 1000),
+  delta=c(0.0, 0.1, 0.2),
   n_cov=c(1),
-  rho=seq(0.1, 0.9, by=0.1),
+  rho=c(0.1, 0.5, 0.99),
   monitor=c("anova", "ancova"),
   final=c("anova", "ancova"),
   correct=c(FALSE, TRUE),
   afunc=c("obf", "pocock"),
-  stages=c(3),
+  stages=c(2),
   ifracts=c(2),
   alpha=c(0.05),
   est_var=c(FALSE, TRUE),

@@ -39,8 +39,6 @@ param_grid <- data.table(param_grid)
 param_grid <- param_grid[!(monitor == "anova" & final == "anova" & correct == T)]
 param_grid <- param_grid[!(monitor == "ancova" & final == "ancova" & correct == T)]
 param_grid <- param_grid[!(monitor == "ancova" & final == "anova")]
-param_grid <- param_grid[!(est_bounds == FALSE & est_var == TRUE)]
-param_grid <- param_grid[!(est_bounds == TRUE & est_var == FALSE)]
 
 N_JOBS <- nrow(param_grid)
 write.csv(param_grid, file=sprintf("%s/params.csv", OUT_DIR))

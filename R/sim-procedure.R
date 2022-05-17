@@ -43,6 +43,8 @@ procedure.closure <- function(monitor, final, correct, rates,
     n_k <- rates * n_K
     K <- length(n_k)
 
+    browser()
+
     if(!est.bounds){
       inflate <- (monitor != final) & correct
       rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))

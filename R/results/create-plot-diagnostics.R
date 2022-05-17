@@ -4,10 +4,10 @@ library(data.table)
 library(ggplot2)
 library(gridExtra)
 
-VERSION <- "18-04-22-1"
+VERSION <- "09-05-22-1"
 in_dir <- sprintf("~/Documents/FileZilla/rct/run-%s/", VERSION)
-out_dir <- paste0(in_dir, "/plot-diagnostics/")
-dir.create(out_dir, showWarnings=FALSE)
+out_dir <- paste0(in_dir, "/plot-diagnostics/", VERSION, "/")
+dir.create(out_dir, showWarnings=FALSE, recursive=T)
 
 params <- fread(paste0(in_dir, "params.csv"))
 
@@ -71,7 +71,7 @@ for(i in small_params$V1){
 
   bounds <- result$u.bounds
 
-  x <- c(1, 2, 0)
+  # x <- c(1, 2, 0)
   numbounds <- function(vec) sum(vec != 0)
   stages <- apply(bounds, MARGIN=1, FUN=numbounds)
 

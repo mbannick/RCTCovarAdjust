@@ -1,4 +1,5 @@
-in_dir <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
+# in_dir <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
+in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
 df <- fread(paste0(in_dir, "summary.csv"))
 
 df.sub <- df[rho %in% c(0.1, 0.5) & afunc == "pocock"]

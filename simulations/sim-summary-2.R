@@ -4,10 +4,11 @@ library(ggplot2)
 library(magrittr)
 
 # args <- commandArgs(TRUE)
-in_dir <- args[1]
+# in_dir <- args[1]
 # in_dir <- "~/Documents/FileZilla/rct/run-10-04-22-2/"
 # in_dir <- "~/Documents/FileZilla/rct/run-11-04-22-3/"
-in_dir <- "~/repos/RCTCovarAdjust/temp/"
+# in_dir <- "~/Documents/FileZilla/rct/run-08-05-22-2/"
+in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
 setwd(in_dir)
 
 files <- list.files(in_dir, ".RData")

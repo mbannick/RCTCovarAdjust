@@ -19,7 +19,7 @@ if(parallel){
 } else {
   TASKID <- 67
   OUT_DIR <- "~/repos/RCTCovarAdjust/temp/"
-  N_SIMS <- 1000
+  N_SIMS <- 50
 }
 
 # SET REPRODUCIBLE SEED
@@ -90,7 +90,7 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
-result <- mclapply(trial_data, procedure, mc.cores=4)
+result <- lapply(trial_data, procedure)
 
 # SAVE RESULTS
 result <- condense.output(result)

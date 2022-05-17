@@ -35,20 +35,35 @@ ggplot(df) + geom_histogram(aes(x=estimate), bins=50, fill='#348feb') +
   labs(x="Point Estimate")
 dev.off()
 
+pdf("dist-of-test-stat-blank.pdf", height=5, width=10)
+par(mfrow=c(1, 2))
+vals <- seq(-4, 4, by=0.01)
+plot(vals, dnorm(vals), lty='dashed', type='l',
+      main="Distribution of Test Statistics Under the Null",
+     xlab="Test Statistic (10,000 simulations)", ylab="Sampling Density",
+     ylim=c(0, 0.4))
+vals2 <- seq(0, 1, by=0.01)
+plot(vals2, dunif(vals2), col='black', lty='dashed', type='l',
+      main="Distribution of P-values Under the Null", ylab="Sampling Density",
+      xlab="P-value (10,000 simulations)",
+     ylim=c(0, 2.0))
+dev.off()
+
 pdf("dist-of-test-stat.pdf", height=5, width=10)
 par(mfrow=c(1, 2))
 vals <- seq(-4, 4, by=0.01)
 d <- density(result$tstat)
 plot(d, main="Distribution of Test Statistics Under the Null",
-     xlab="Test Statistic (10,000 simulations)")
+     xlab="Test Statistic (10,000 simulations)", ylab="Sampling Density",
+     ylim=c(0, 0.4))
 lines(vals, dnorm(vals), col='black', lty='dashed')
+abline(v=2.178273, col='red', lty='dashed')
+abline(v=-2.178273, col='red', lty='dashed')
 vals2 <- seq(0, 1, by=0.01)
-# d2 <- density(pnorm(abs(result$tstat), lower.tail=F)*2)
-# plot(d2, main="Distribution of P-values Under the Null",
-#      xlab="P-value (10,000 simulations)", xlim=c(0, 1))
 hist(pnorm(abs(result$tstat), lower.tail=F)*2, breaks=40,
      main="Distribution of P-values Under the Null",
-     xlab="P-value (10,000 simulations)", freq=F)
+     xlab="P-value (10,000 simulations)", freq=F, ylab="Sampling Density",
+     ylim=c(0, 2.0))
 lines(vals2, dunif(vals2), col='black', lty='dashed')
 dev.off()
 # hist(result$tstat, breaks=50, freq=F)

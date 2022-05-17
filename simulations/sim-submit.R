@@ -18,7 +18,7 @@ N_SIMS <- args[2]
 
 # Parameter grid
 params <- list(
-  n=c(50, 100, 250),
+  n=c(50, 100, 250, 1000),
   delta=c(0.0, 0.1),
   n_cov=c(1),
   rho=seq(0.1, 0.9, by=0.1),
@@ -29,7 +29,7 @@ params <- list(
   stages=c(3),
   ifracts=c(2),
   alpha=c(0.05),
-  est_var=c(FALSE, TRUE),
+  est_var=c(TRUE),
   est_bounds=c(FALSE, TRUE)
 )
 

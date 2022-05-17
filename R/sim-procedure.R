@@ -43,13 +43,9 @@ procedure.closure <- function(monitor, final, correct, rates,
     n_k <- rates * n_K
     K <- length(n_k)
 
-    browser()
-
     if(!est.bounds){
       inflate <- (monitor != final) & correct
-      rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))
-      corr <- corr.mat(n_k=n_k, rho=rho, mis=c(rep(F, K-1), inflate))
-      pre_bounds <- b.func(corr)
+      pre_bounds <- b.func(inflate)
     }
 
     while(!reject & (i < length(data_list))){

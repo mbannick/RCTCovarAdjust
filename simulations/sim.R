@@ -31,10 +31,14 @@ if(!parallel){
   TASKID <- 3
   param_grid <- data.table(param_grid)
   param_grid <- param_grid[TASKID,]
-  param_grid[, rho := 1]
+  param_grid[, rho := 0.5]
   param_grid[, afunc := "pocock"]
   param_grid[, stages := 2]
   param_grid[, delta := 0.0]
+  param_grid[, est_bounds := FALSE]
+  param_grid[, monitor := "anova"]
+  param_grid[, final := "ancova"]
+  param_grid[, correct := FALSE]
   param_grid <- data.frame(param_grid)
   param_grid <- rbind(param_grid, param_grid, param_grid, param_grid)
   param_grid$n <- c(50, 100, 1000, 2000)
@@ -59,7 +63,9 @@ b.func <- get.boundary.closure(
   a.func=a.func,
   rates=rates,
   est.bounds=gp("est_bounds"),
-  a.type=gp("afunc"))
+  a.type=gp("afunc"),
+  rho=gp("rho"),
+  n=gp("n"))
 
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(

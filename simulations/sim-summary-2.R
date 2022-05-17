@@ -4,9 +4,11 @@ library(ggplot2)
 library(magrittr)
 
 # args <- commandArgs(TRUE)
-in_dir <- args[1]
+# in_dir <- args[1]
 # in_dir <- "~/Documents/FileZilla/rct/run-10-04-22-2/"
 # in_dir <- "~/Documents/FileZilla/rct/run-11-04-22-3/"
+# in_dir <- "~/Documents/FileZilla/rct/run-08-05-22-2/"
+in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
 setwd(in_dir)
 
 files <- list.files(in_dir, ".RData")
@@ -25,11 +27,14 @@ get.results <- function(file){
   power <- mean(result$reject)
   bias_naive <- mean(result$est - truth)
   bias_corr <- mean(result$point - truth)
+  bias_naive_med <- median(result$est - truth)
+  bias_corr_med <- median(result$point - truth)
 
   cover_naive <- mean((result$naive_ci[, 1] <= truth) & (result$naive_ci[, 2] >= truth))
   cover_corr <- mean(result$ci[, 1] <= truth & (result$ci[, 2] >= truth))
   return(c(param_id, power,
            bias_naive, bias_corr,
+           bias_naive_med, bias_corr_med,
            cover_naive, cover_corr))
 }
 
@@ -37,6 +42,7 @@ results <- sapply(files, get.results)
 results <- t(results)
 results <- data.table(results)
 setnames(results, c("param", "power", "bias_naive", "bias_corr",
+                    "bias_naive_med", "bias_corr_med",
                     "cover_naive", "cover_corr"))
 
 df <- merge(parameters, results, by="param")

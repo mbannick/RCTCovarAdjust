@@ -25,6 +25,7 @@ procedure.closure <- function(monitor, final, correct, rates,
                               a.func, v.func, b.func, est.bounds){
 
   procedure <- function(data_list){
+    cat(".")
 
     monitor_var <- v.func(monitor == "ancova")
     final_var <- v.func(final == "ancova")
@@ -44,9 +45,7 @@ procedure.closure <- function(monitor, final, correct, rates,
 
     if(!est.bounds){
       inflate <- (monitor != final) & correct
-      rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))
-      corr <- corr.mat(n_k=n_k, rho=rho, mis=c(rep(F, K-1), inflate))
-      pre_bounds <- b.func(corr)
+      pre_bounds <- b.func(inflate)
     }
 
     while(!reject & (i < length(data_list))){

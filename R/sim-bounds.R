@@ -1,6 +1,7 @@
 source("~/repos/RCTCovarAdjust/R/covariance.R")
 source("~/repos/RCTCovarAdjust/R/boundaries.R")
 source("~/repos/RCTCovarAdjust/R/constants.R")
+source("~/repos/RCTCovarAdjust/R/utils.R")
 
 #' Generating function to get boundaries
 #' based on previous bounds and a correlation matrix
@@ -18,7 +19,8 @@ source("~/repos/RCTCovarAdjust/R/constants.R")
 #' prev_bounds <- cbind(-prev_bounds, prev_bounds)
 #' corr <- corr.mat(rates, rho=0.8, mis=c(F, F, F, T))
 #' bound.func(prev_bounds, corr)
-get.boundary.closure <- function(a.func, rates, est.bounds, a.type){
+get.boundary.closure <- function(a.func, rates, est.bounds, a.type,
+                                 rho, n){
 
   if(est.bounds){
     get.boundary <- function(prev_bounds, corr){
@@ -43,7 +45,10 @@ get.boundary.closure <- function(a.func, rates, est.bounds, a.type){
       return(bound)
     }
   } else {
-    get.boundary <- function(corr){
+    get.boundary <- function(inflate){
+      K <- length(rates)
+      n_k <- nk.from.rates(n, rates)
+      corr <- corr.mat(n_k=cumsum(n_k), rho=rho, mis=c(rep(F, K-1), inflate))
       bounds <- get.bound.by.corr(corr, obf=(a.type=="obf"))
       return(bounds)
     }

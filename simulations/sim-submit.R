@@ -18,18 +18,18 @@ N_SIMS <- args[2]
 
 # Parameter grid
 params <- list(
-  n=c(100, 250, 1000),
-  delta=c(0.0, 0.1, 0.2),
+  n=c(50, 100, 250, 1000),
+  delta=c(0.0, 0.1),
   n_cov=c(1),
-  rho=c(0.1, 0.5, 0.99),
+  rho=seq(0.1, 0.9, by=0.1),
   monitor=c("anova", "ancova"),
   final=c("anova", "ancova"),
   correct=c(FALSE, TRUE),
   afunc=c("obf", "pocock"),
-  stages=c(2),
+  stages=c(3),
   ifracts=c(2),
   alpha=c(0.05),
-  est_var=c(FALSE, TRUE),
+  est_var=c(TRUE),
   est_bounds=c(FALSE, TRUE)
 )
 
@@ -39,8 +39,6 @@ param_grid <- data.table(param_grid)
 param_grid <- param_grid[!(monitor == "anova" & final == "anova" & correct == T)]
 param_grid <- param_grid[!(monitor == "ancova" & final == "ancova" & correct == T)]
 param_grid <- param_grid[!(monitor == "ancova" & final == "anova")]
-param_grid <- param_grid[!(est_bounds == FALSE & est_var == TRUE)]
-param_grid <- param_grid[!(est_bounds == TRUE & est_var == FALSE)]
 
 N_JOBS <- nrow(param_grid)
 write.csv(param_grid, file=sprintf("%s/params.csv", OUT_DIR))

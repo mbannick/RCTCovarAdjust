@@ -18,18 +18,18 @@ N_SIMS <- args[2]
 
 # Parameter grid
 params <- list(
-  n=c(50, 100, 250, 1000),
-  delta=c(0.0, 0.1, 0.2, 0.5),
+  n=c(100),
+  delta=c(0.0, 0.25),
   n_cov=c(1),
-  rho=c(0.1, 0.5),
+  rho=c(0.5),
   monitor=c("anova", "ancova"),
   final=c("anova", "ancova"),
   correct=c(FALSE, TRUE),
-  afunc=c("obf", "pocock"),
-  stages=c(3),
+  afunc=c("pocock"),
+  stages=c(4),
   ifracts=c(2),
   alpha=c(0.05),
-  est_var=c(FALSE, TRUE)
+  est_var=c(TRUE)
 )
 
 # Save parameter list and number of tasks

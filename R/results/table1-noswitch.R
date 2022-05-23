@@ -1,10 +1,11 @@
 # in_dir <- "~/Documents/FileZilla/rct/run-10-04-22-2/"
-in_dir <- "~/Documents/FileZilla/rct/run-11-04-22-3/"
-in_dir <- "~/Documents/FileZilla/rct/run-08-05-22-2/"
+# in_dir <- "~/Documents/FileZilla/rct/run-11-04-22-3/"
+# in_dir <- "~/Documents/FileZilla/rct/run-08-05-22-2/"
+in_dir <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
 
 df <- fread(paste0(in_dir, "summary.csv"))
 
-BTYPE <- "bias"
+BTYPE <- "med"
 
 setnames(df, "bias_naive_med", "med_naive")
 setnames(df, "bias_corr_med", "med_corr")

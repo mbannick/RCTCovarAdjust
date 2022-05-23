@@ -32,16 +32,17 @@ if(!parallel){
   param_grid <- data.table(param_grid)
   param_grid <- param_grid[TASKID,]
   param_grid[, rho := 0.5]
-  param_grid[, afunc := "pocock"]
-  param_grid[, stages := 2]
-  param_grid[, delta := 0.0]
-  param_grid[, est_bounds := FALSE]
+  param_grid[, afunc := "obf"]
+  param_grid[, stages := 3]
+  param_grid[, delta := 0.1]
+  param_grid[, est_bounds := TRUE]
+  param_grid[, est_var := TRUE]
   param_grid[, monitor := "anova"]
   param_grid[, final := "ancova"]
-  param_grid[, correct := FALSE]
+  param_grid[, correct := TRUE]
   param_grid <- data.frame(param_grid)
   param_grid <- rbind(param_grid, param_grid, param_grid, param_grid)
-  param_grid$n <- c(50, 100, 1000, 2000)
+  param_grid$n <- 1000
 }
 
 # PARAMETER GETTER FOR THIS TASK ID

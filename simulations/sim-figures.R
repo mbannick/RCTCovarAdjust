@@ -12,6 +12,8 @@ df[, std := sqrt(power * (1 - power)) / sqrt(10000)]
 df[, lower := power - qnorm(0.975) * std]
 df[, upper := power + qnorm(0.975) * std]
 
+df[, "un-adjusted"]
+
 # Type I Error Plot
 
 pdf("~/OneDrive/Documents/2021-2022/BIOST 600-noah/type1error-2.pdf", height=8, width=14)

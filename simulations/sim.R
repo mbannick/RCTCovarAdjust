@@ -17,8 +17,8 @@ if(parallel){
   OUT_DIR <- args[1]
   N_SIMS <- as.integer(args[2])
 } else {
-  TASKID <- 861
-  OUT_DIR <- "../simulations/"
+  TASKID <- 353
+  OUT_DIR <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
   N_SIMS <- 30
 }
 

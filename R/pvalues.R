@@ -349,7 +349,7 @@ get.pvalue.sw <- function(obs, u_k, n_k, k_r,
         } else {
           if(switch){
             corr <- corr.mat(c(n_k[1:k_r], n_k[k_r]), rho=rho, mis=c(rep(F, k_r), T))
-            p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:i],
+            p.i <- .two.tests.k(obs=obs, u_k=u_k, corr=corr, alt=alt[1:(i+1)],
                                 crossed_lower=crossed_lower)
           } else {
             corr <- corr.mat(c(n_k[1:k_r]))

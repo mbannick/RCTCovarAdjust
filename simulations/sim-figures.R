@@ -2,14 +2,20 @@ library(data.table)
 library(ggplot2)
 
 df <- fread("/Users/marlena/Documents/FileZilla/rct/run-24-02-22-2/summary.csv")
-df <- fread("/Users/marlena/Documents/FileZilla/rct/run-10-04-22-2/summary.csv")
+df0 <- fread("/Users/marlena/Documents/FileZilla/rct/run-10-04-22-2/summary.csv")
+df <- fread("/Users/marlena/Documents/FileZilla/rct/run-16-05-22-5/summary.csv")
 
-df[, type := factor(type, levels=c("un-adjusted", "adjusted",
-                                   "inconsistent, naive", "inconsistent, corrected"))]
+
+
+df <- df[((type %in% c("un-adjusted", "adjusted",
+           "inconsistent, naive", "inconsistent, corrected")) & est_bounds == TRUE) |
+           (type == "inconsistent, corrected" & est_bounds == FALSE)]
+
 df[type == "un-adjusted", label := "(A)(i)"]
 df[type == "adjusted", label := "(A)(ii)"]
 df[type == "inconsistent, naive", label := "(B)(i)"]
-df[type == "inconsistent, corrected", label := "(B)(iii)"]
+df[type == "inconsistent, corrected" & est_bounds == TRUE, label := "(B)(iii)"]
+df[type == "inconsistent, corrected" & est_bounds == FALSE, label := "(B)(ii)"]
 
 df[, n := as.factor(n)]
 df[, std := sqrt(power * (1 - power)) / sqrt(10000)]
@@ -33,6 +39,8 @@ ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho, y=power, color=label)) 
   labs(color="Scenario", linetype="Boundary Type",
        y="Type I Error",
        x="Reduction in variance by using ANCOVA")
+  # geom_errorbar(aes(ymin=lower, ymax=upper, x=1-rho),
+  #               linetype='dashed', width=.1)
 dev.off()
 
 # ggplot(data=df[delta > 0 & stages == 3], aes(x=rho, y=power, color=n, linetype=afunc)) +

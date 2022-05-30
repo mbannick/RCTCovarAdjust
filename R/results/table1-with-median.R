@@ -1,6 +1,7 @@
 # in_dir <- "~/Documents/FileZilla/rct/run-08-05-22-2/"
 # in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
-in_dir <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
+# in_dir <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
+in_dir <- "~/Documents/FileZilla/rct/run-23-05-22-1/"
 df <- fread(paste0(in_dir, "summary.csv"))
 
 setnames(df, "bias_naive_med", "med_naive")
@@ -18,7 +19,6 @@ df.sub <- df.sub[est_var == TRUE]
 df.sub[, est_var := NULL]
 
 df.sub[, neworder := sqrt(n) * delta]
-
 
 setorder(df.sub, delta, rho, n, type)
 

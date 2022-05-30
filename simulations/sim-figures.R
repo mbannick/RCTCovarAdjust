@@ -3,7 +3,10 @@ library(ggplot2)
 
 # df <- fread("/Users/marlena/Documents/FileZilla/rct/run-24-02-22-2/summary.csv")
 # df0 <- fread("/Users/marlena/Documents/FileZilla/rct/run-10-04-22-2/summary.csv")
-df <- fread("/Users/marlena/Documents/FileZilla/rct/run-16-05-22-5/summary.csv")
+# df <- fread("/Users/marlena/Documents/FileZilla/rct/run-16-05-22-5/summary-TEST.csv")
+# df <- fread("/Users/marlena/Documents/FileZilla/rct/run-17-02-22-6/summary.csv")
+df <- fread("/Users/marlena/Documents/FileZilla/rct/run-28-05-22-2/summary.csv")
+df <- df[stages == 3]
 
 df <- df[((type %in% c("un-adjusted", "adjusted",
            "inconsistent, naive", "inconsistent, corrected")) & est_bounds == TRUE) |
@@ -16,7 +19,7 @@ df[type == "inconsistent, corrected" & est_bounds == FALSE, label := "(B)(ii)"]
 df[type == "inconsistent, corrected" & est_bounds == TRUE, label := "(B)(iii)"]
 
 df[, n := as.factor(n)]
-df[, std := sqrt(power * (1 - power)) / sqrt(10000)]
+df[, std := sqrt(power * (1 - power)) / sqrt(25000)]
 df[, lower := power - qnorm(0.975) * std]
 df[, upper := power + qnorm(0.975) * std]
 

@@ -4,7 +4,7 @@ library(data.table)
 library(ggplot2)
 library(gridExtra)
 
-VERSION <- "09-05-22-1"
+VERSION <- "16-05-22-2"
 in_dir <- sprintf("~/Documents/FileZilla/rct/run-%s/", VERSION)
 out_dir <- paste0(in_dir, "/plot-diagnostics/", VERSION, "/")
 dir.create(out_dir, showWarnings=FALSE, recursive=T)

@@ -9,12 +9,19 @@ in_dir <- args[1]
 # in_dir <- "~/Documents/FileZilla/rct/run-11-04-22-3/"
 # in_dir <- "~/Documents/FileZilla/rct/run-08-05-22-2/"
 # in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
+# in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
+# in_dir <- "~/Documents/FileZilla/rct/run-18-04-22-1"
+# in_dir <- "~/Documents/FileZilla/rct/run-16-05-22-2/"
 setwd(in_dir)
 
 files <- list.files(in_dir, ".RData")
 
 parameters <- fread("params.csv")
 setnames(parameters, "V1", "param")
+
+stage_num <- unique(parameters$stages)
+if(length(stage_num) > 1) stop()
+potential_stages <- paste0("stage_", 1:stage_num)
 
 get.results <- function(file){
   param_id <- gsub("params_", "", file)
@@ -32,10 +39,19 @@ get.results <- function(file){
 
   cover_naive <- mean((result$naive_ci[, 1] <= truth) & (result$naive_ci[, 2] >= truth))
   cover_corr <- mean(result$ci[, 1] <= truth & (result$ci[, 2] >= truth))
+
+  bounds <- result$u.bounds
+  numbounds <- function(vec) sum(vec != 0)
+  stages <- apply(bounds, MARGIN=1, FUN=numbounds)
+
+  stageprop <- function(num) mean(stages == num)
+  stageprops <- sapply(1:stage_num, stageprop)
+
   return(c(param_id, power,
            bias_naive, bias_corr,
            bias_naive_med, bias_corr_med,
-           cover_naive, cover_corr))
+           cover_naive, cover_corr,
+           stageprops))
 }
 
 results <- sapply(files, get.results)
@@ -43,7 +59,8 @@ results <- t(results)
 results <- data.table(results)
 setnames(results, c("param", "power", "bias_naive", "bias_corr",
                     "bias_naive_med", "bias_corr_med",
-                    "cover_naive", "cover_corr"))
+                    "cover_naive", "cover_corr",
+                    potential_stages))
 
 df <- merge(parameters, results, by="param")
 # df[, std := sqrt(power * (1 - power)) / sqrt(1000)]

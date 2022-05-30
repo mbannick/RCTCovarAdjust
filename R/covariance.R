@@ -13,10 +13,16 @@ corr.mat <- function(n_k, rho=1, mis=F, sme=F){
   } else {
     if(length(mis) != K) stop()
   }
-  rho.vec <- rep(1, K)
-  rho.vec[mis] <- 0
-  rho.mat <- rho.vec %*% t(rho.vec)
-  rho.mat[rho.mat == 0] <- rho
+  rho.mat <- matrix(1, nrow=K, ncol=K)
+
+  for(i in 1:K){
+    for(j in 1:K){
+      if(mis[i] != mis[j]){
+        rho.mat[i, j] <- rho
+        rho.mat[j, i] <- rho
+      }
+    }
+  }
   diag(rho.mat) <- 1
 
   # Use sample mean indicator (rather than likelihood ratio

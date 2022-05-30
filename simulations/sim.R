@@ -17,9 +17,9 @@ if(parallel){
   OUT_DIR <- args[1]
   N_SIMS <- as.integer(args[2])
 } else {
-  TASKID <- 353
-  OUT_DIR <- "~/Documents/FileZilla/rct/run-18-04-22-1/"
-  N_SIMS <- 30
+  TASKID <- 67
+  OUT_DIR <- "~/repos/RCTCovarAdjust/temp/"
+  N_SIMS <- 50
 }
 
 # SET REPRODUCIBLE SEED
@@ -27,6 +27,23 @@ set.seed(715)
 
 # PARAMETER GRID
 param_grid <- read.csv(sprintf("%s/params.csv", OUT_DIR))
+if(!parallel){
+  TASKID <- 3
+  param_grid <- data.table(param_grid)
+  param_grid <- param_grid[TASKID,]
+  param_grid[, rho := 0.5]
+  param_grid[, afunc := "obf"]
+  param_grid[, stages := 3]
+  param_grid[, delta := 0.1]
+  param_grid[, est_bounds := TRUE]
+  param_grid[, est_var := TRUE]
+  param_grid[, monitor := "anova"]
+  param_grid[, final := "ancova"]
+  param_grid[, correct := TRUE]
+  param_grid <- data.frame(param_grid)
+  param_grid <- rbind(param_grid, param_grid, param_grid, param_grid)
+  param_grid$n <- 1000
+}
 
 # PARAMETER GETTER FOR THIS TASK ID
 gp <- get.param.closure(TASKID, param_grid)
@@ -45,7 +62,11 @@ a.func <- spend(
 # OTHERWISE, IT'S BASED ON THE ALPHA-SPENDING FUNCTIONS IN WASSMER-BRANNATH
 b.func <- get.boundary.closure(
   a.func=a.func,
-  rates=rates)
+  rates=rates,
+  est.bounds=gp("est_bounds"),
+  a.type=gp("afunc"),
+  rho=gp("rho"),
+  n=gp("n"))
 
 # CLOSURE FUNCTIONS
 sim.data <- sim.data.closure(
@@ -68,6 +89,7 @@ procedure <- procedure.closure(
   monitor=gp("monitor"),
   final=gp("final"),
   correct=gp("correct"),
+  est.bounds=gp("est_bounds"),
   rates=rates,
   a.func=a.func,
   v.func=v.func,
@@ -75,12 +97,6 @@ procedure <- procedure.closure(
 
 # RUN SIMULATION
 trial_data <- replicate(N_SIMS, sim.trial(sim.data), simplify=F)
-# for(i in 1:length(trial_data)){
-#   print(i)
-#   # if(i == 18) {
-#   procedure(trial_data[[i]])
-#   # }
-# }
 result <- lapply(trial_data, procedure)
 
 # SAVE RESULTS

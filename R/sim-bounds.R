@@ -1,6 +1,7 @@
 source("~/repos/RCTCovarAdjust/R/covariance.R")
 source("~/repos/RCTCovarAdjust/R/boundaries.R")
 source("~/repos/RCTCovarAdjust/R/constants.R")
+source("~/repos/RCTCovarAdjust/R/utils.R")
 
 #' Generating function to get boundaries
 #' based on previous bounds and a correlation matrix
@@ -18,28 +19,39 @@ source("~/repos/RCTCovarAdjust/R/constants.R")
 #' prev_bounds <- cbind(-prev_bounds, prev_bounds)
 #' corr <- corr.mat(rates, rho=0.8, mis=c(F, F, F, T))
 #' bound.func(prev_bounds, corr)
-get.boundary.closure <- function(a.func, rates){
+get.boundary.closure <- function(a.func, rates, est.bounds, a.type,
+                                 rho, n){
 
-  get.boundary <- function(prev_bounds, corr){
+  if(est.bounds){
+    get.boundary <- function(prev_bounds, corr){
 
-    if(is.null(prev_bounds)){
-      i <- 1
-    } else {
-      i <- nrow(prev_bounds) + 1
-    }
+      if(is.null(prev_bounds)){
+        i <- 1
+      } else {
+        i <- nrow(prev_bounds) + 1
+      }
 
-    if(i > 0){
-      if(any(dim(corr) != c(i, i))) stop(
-        "Mismatch between previous bounds
+      if(i > 0){
+        if(any(dim(corr) != c(i, i))) stop(
+          "Mismatch between previous bounds
        and correlation dimension."
-      )
+        )
+      }
+
+      a_spend <- a.func(rates)
+      bound <- solve.boundary(power=a_spend[i],
+                              corr=corr, u_k=prev_bounds)
+
+      return(bound)
     }
-
-    a_spend <- a.func(rates)
-    bound <- solve.boundary(power=a_spend[i],
-                            corr=corr, u_k=prev_bounds)
-
-    return(bound)
+  } else {
+    get.boundary <- function(inflate){
+      K <- length(rates)
+      n_k <- nk.from.rates(n, rates)
+      corr <- corr.mat(n_k=cumsum(n_k), rho=rho, mis=c(rep(F, K-1), inflate))
+      bounds <- get.bound.by.corr(corr, obf=(a.type=="obf"))
+      return(bounds)
+    }
   }
 
 }

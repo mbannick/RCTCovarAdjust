@@ -418,8 +418,10 @@ search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
     return(p - alpha)
   }
   val <- uniroot(search.fun, lower=-500, upper=500, trace=1)$root
-  # browser()
-  # xs <- seq(-5, 5, by=0.05)
+  # out.dir <- "~/repos/RCTCovarAdjust/debug2/"
+  # num <- length(list.files(out.dir))
+  # pdf(paste0(out.dir, "sim-", num+1, ".pdf"), height=6, width=6)
+  # xs <- seq(-0.7, 0.7, by=0.01)
   # ps.L <- sapply(xs, function(x) get.pvalue.sw(obs.z, alt=get.z(x),
   #                                              u_k=u_k, n_k=n_k, k_r=k_r, rho=rho,
   #                                              ancova_monitor=ancova_monitor,
@@ -435,6 +437,8 @@ search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
   #                                              last_stage=last_stage, type="upper"))
   # plot(ps.L ~ xs, type='l')
   # lines(ps.U ~ xs, col='blue')
+  # abline(v=0.1)
+  # dev.off()
   return(val)
 }
 

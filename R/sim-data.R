@@ -1,4 +1,5 @@
 library(magrittr)
+source("~/repos/RCTCovarAdjust/R/utils.R")
 
 #' Generate a function that will simulate data with fixed
 #' simulation parameters with sample size as the argument.
@@ -40,9 +41,7 @@ sim.data.closure <- function(delta, n_cov, rho){
 sim.trial.closure <- function(N, rates){
   sim.trial <- function(sim.data){
 
-    n_cuml <- floor(N * rates)
-    n_k <- c(n_cuml[1], diff(n_cuml))
-
+    n_k <- nk.from.rates(N, rates)
     dat <- lapply(n_k, sim.data)
 
     datX <- lapply(dat, function(x) x$X)

@@ -1,6 +1,4 @@
-source("R/trial-data.R")
-source("R/trial-funcs.R")
-source("R/pvalues.R")
+source("~/repos/RCTCovarAdjust/R/pvalues.R")
 
 # Confidence intervals
 
@@ -12,45 +10,35 @@ source("R/pvalues.R")
 #' @param u_k Boundaries up until the point of rejection
 #'
 #' @examples
-#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
-#' K <- length(u_k)
-#' n_k <- rep(10, K)
-#' N <- sum(n_k)
-#' corr.1 <- basic.cov(n_k)
-#' corr.2 <- basic.cov(n_k, rho=0.9)
-#' corr.3 <- basic.cov(n_k, rho=0.9, extra=TRUE)
-#' alpha <- 0.05
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.1, alpha=alpha, u_k=u_k[1:(K-1)])
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.2, alpha=alpha, u_k=u_k[1:(K-1)])
-#'
-#' # Monitor with ANOVA and conduct ANCOVA after final ANOVA
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k)
-#'
 #' # ------------------------------------------------------ #
-#' # FIX IT WITH NEW BOUNDS
-#' # These are the alpha spending bounds for alpha = 0.045, so that there's
-#' # some type I error left over.
+#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
+#' u_k1 <- cbind(-u_k, u_k)
+#' u_k2 <- cbind(rep(-Inf, 4), u_k)
 #'
-#' u_k2 <- c(4.415989, 3.023536, 2.408191, 2.056245)
-#' get.confint.sw(est=0.32, sd_K=1, n_K=sum(n_k), corr=corr.3, alpha=alpha, u_k=u_k2)
-get.confint.sw <- function(est, sd_K, n_K, u_k, corr, alpha, algorithm=Miwa(steps=1000)){
+#' # This gives exactly alpha = 0.05 by putting in the last
+#' # boundary.
+#' n_k1 <- c(10, 20, 30, 40)
+#' n_k2 <- c(10, 20)
+#'
+#' get.confint.sw(est=1, u_k=u_k1[1:3,], sd_K=1,
+#'                n_k=n_k1, alpha=0.05,
+#'                ancova_monitor=F, ancova_test=F, last_stage=T,
+#'                crossed_lower=FALSE)
+get.confint.sw <- function(est, sd_K, n_k, alpha, ...){
 
-  # Function to translate effect size into z-statistic
-  # At the analysis stage K (not at the first stage)
-  get.z <- function(eff) sqrt(n_K) * (eff - est) / sd_K
+  lower <- search.fun.sw(est, sd_K, n_k, alpha=alpha/2, low=FALSE, ...)
+  upper <- search.fun.sw(est, sd_K, n_k, alpha=alpha/2, low=TRUE, ...)
 
-  # Create a function to translate the estimate to a z-statistic
-  search.fun <- function(eff, low=FALSE){
-    z <- get.z(eff)
-    if(low){
-      p <- get.pvalue.sw(z, u_k=u_k, corr=corr, type="lower")
-    } else {
-      p <- get.pvalue.sw(z, u_k=u_k, corr=corr, type="upper")
-    }
-    return(p - alpha/2)
-  }
-  # Test out a lot of different mean values to see what the p-value is
-  lower <- uniroot(search.fun, low=FALSE, lower=-100, upper=est, trace=1)$root
-  upper <- uniroot(search.fun, low=TRUE, lower=est, upper=100, trace=1)$root
+  # effs <- seq(-abs(est)*3, abs(est)*3, by=0.02)
+  # lower.vec <- sapply(effs, search.fun, low=FALSE) + alpha/2
+  # upper.vec <- sapply(effs, search.fun, low=TRUE) + alpha/2
+  #
+  # plot(lower.vec ~ effs, type='l', ylab="p-value", xlab="effect size")
+  # lines(upper.vec ~ effs, col='blue')
+  # legend(x=1.5, y=0.8, legend=c("lower", "upper"), col=c("black", "blue"),
+  #        lty=c(1,1), cex=0.5)
+  # abline(h=0.975, lty='dashed')
+  # abline(h=0.025, lty='dashed')
+
   return(c(lower, upper))
 }

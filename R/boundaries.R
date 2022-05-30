@@ -1,8 +1,70 @@
 library(magrittr)
 library(MASS)
 library(mvtnorm)
-source("R/trial-data.R")
-source("R/trial-funcs.R")
+
+source("~/repos/RCTCovarAdjust/R/constants.R")
+source("~/repos/RCTCovarAdjust/R/covariance.R")
+
+.get.power <- function(c, rates, obf=FALSE, rho=1){
+
+  K <- length(rates)
+  u_k <- rep(c, K)
+
+  if(obf) u_k <- u_k / sqrt(1:K)
+
+  Sigma <- corr.mat(rates, rho=rho, mis=c(rep(F, K-1), T))
+  val <- 1 - pmvnorm(lower=-u_k,
+                     upper=u_k,
+                     mean=rep(0, K), corr=Sigma,
+                     algorithm=Miwa(steps=1000))
+
+  return(val)
+}
+
+#' Get boundaries
+#'
+#' @param K number of stages
+#' @param obf O'Brien-Fleming bounds (TRUE) or Pocock (FALSE)
+#' @param rho Reduction in variance due to ANCOVA
+#' @param power Alpha-level
+#'
+#' @examples
+#' get.bound(3, obf=TRUE)
+get.bound <- function(rates, obf=FALSE, rho=1, power=0.05){
+
+  K <- length(rates)
+  f <- function(x) .get.power(x, rates=rates, obf=obf, rho=rho) - power
+  s <- uniroot(f, interval=c(0, 100))
+
+  if(obf){
+    return(s$root / sqrt(1:K))
+  } else {
+    return(rep(s$root, K))
+  }
+}
+
+get.bound.by.corr <- function(corr, obf=FALSE, power=0.05){
+  K <- nrow(corr)
+  get.power <- function(c){
+
+    u_k <- rep(c, K)
+    if(obf) u_k <- u_k / sqrt(1:K)
+
+    val <- 1 - pmvnorm(lower=-u_k,
+                       upper=u_k,
+                       mean=rep(0, K), corr=corr,
+                       algorithm=Miwa(steps=1000))
+  }
+  f <- function(x) get.power(x) - power
+  s <- uniroot(f, interval=c(0, 100))
+
+  if(obf){
+    return(s$root / sqrt(1:K))
+  } else {
+    return(rep(s$root, K))
+  }
+
+}
 
 #' Root solve for a particular alpha level, two-sided.
 #'
@@ -12,17 +74,17 @@ source("R/trial-funcs.R")
 #' @param u_k Previous boundaries.
 #' @param tol Tolerance parameter for binary search.
 #' @param ... Additional arguments for pmvnorm algorithm.
-solve.boundary <- function(power, mean=NULL, corr=NULL, u_k=NULL,
-                           tol=.Machine$double.eps, ...){
-
-  if(is.null(mean)) mean <- rep(0, length(u_k) + 1)
+solve.boundary <- function(power, corr=NULL, u_k=NULL,
+                           tol=.Machine$double.eps, algorithm=Miwa(steps=1000)){
 
   if(is.null(u_k)){
-    bin <- function(x) 2 * pnorm(x, mean=mean, sd=1, lower.tail=F) - power
+    bin <- function(x) 2 * pnorm(x, mean=0, sd=1, lower.tail=F) - power
   } else {
-    bin <- function(x) 1 - power - pmvnorm(lower=c(-u_k, -x),
-                                           upper=c(u_k, x),
-                                           mean=mean, corr=corr, ...)
+    bin <- function(x) 1 - power - pmvnorm(lower=c(u_k[, 1], -x),
+                                           upper=c(u_k[, 2], x),
+                                           mean=rep(0, nrow(u_k) + 1),
+                                           corr=corr,
+                                           algorithm=algorithm)
   }
   u <- uniroot(bin, c(0, 100), tol=tol)
   return(u$root)
@@ -39,7 +101,7 @@ solve.boundary <- function(power, mean=NULL, corr=NULL, u_k=NULL,
 #'
 #' @export
 #' @param a.func A continuous, monotonic increasing function of t
-#'   where a.func(a, t=0) = 0 and a.func(a, t=1) = a
+#'   where a.func(0) = 0 and a.func(1) = a
 #'   where a is the type I error desired
 #' @param a The type I error desired
 #' @param rates A vector of information rates (between 0 and 1)
@@ -48,49 +110,39 @@ solve.boundary <- function(power, mean=NULL, corr=NULL, u_k=NULL,
 #' @param rho Fraction of variance explained by fitting ANCOVA.
 #'
 #' @examples
-#' set.seed(101)
 #' # information rates
 #' t <- 1:4/4
 #'
 #' # approximate Pocock boundaries
-#' a.func.pocock <- function(a, t) a * log(1 + (exp(1) - 1) * t)
-#' get.boundaries(a.func=a.func.pocock, a=0.05,
-#'                rates=t, N=1000)
-#' get.boundaries(a.func=a.func.pocock, a=0.05, rho=0.5,
-#'                rates=t, N=1000)
+#' get.boundaries(a.func=POCOCK.SPEND(0.05), rates=t)
+#' get.boundaries(a.func=POCOCK.SPEND(0.05), rates=t, rho=0.5)
 #'
 #' # approximate O'Brien-Fleming boundaries
-#' a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
-#' get.boundaries(a.func=a.func.obf, a=0.05,
-#'                rates=t, N=1000)
-#' get.boundaries(a.func=a.func.obf, a=0.05,
-#'                rates=t, N=1000, rho=0.5)
-get.boundaries <- function(a.func, a, rates, N,
+#' get.boundaries(a.func=OBF.SPEND(0.05), rates=t)
+#' get.boundaries(a.func=OBF.SPEND(0.05), rates=t,
+#'                u_k=c(4.332634, 2.963132, 2.359044))
+#' get.boundaries(a.func=OBF.SPEND(0.05), rates=t, rho=0.5)
+get.boundaries <- function(a.func, rates,
                            u_k=c(), rho=1, algorithm=Miwa(steps=1000),
                            extra=FALSE){
 
   # Get sample size increments
   K <- length(rates)
-  n_k <- round(rates*N)
-  n_k <- c(n_k[1], diff(n_k))
 
   # Number of *fixed* previous bounds
   K_prev <- length(u_k)
 
-  # Create alpha spending function
-  a.spend <- function(t) a.func(a=a, t)
-
   # Append 0 onto the rates
-  a.cuml <- a.spend(rates)
+  a.cuml <- a.func(rates)
 
   bounds <- c()
   for(i in 1:K){
     if(i > K_prev){
 
       # Create covariance matrix
-      Sigma <- basic.cov(n_k[1:i])
+      Sigma <- corr.mat(rates[1:i])
       if(i == K){
-        Sigma <- basic.cov(n_k[1:i], rho=rho)
+        Sigma <- corr.mat(rates[1:i], rho=rho)
       }
       bound <- solve.boundary(power=a.cuml[i], corr=Sigma,
                               u_k=bounds, algorithm=algorithm)

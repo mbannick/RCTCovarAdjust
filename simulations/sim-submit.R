@@ -2,35 +2,74 @@
 # ----------------------------
 library(magrittr)
 library(data.table)
+library(R.utils)
 
-# Read in command line arguments
-args <- commandArgs(trailingOnly=TRUE)
+source("../simulations/parse-args.R")
+
+# Read in command line arguments, with the following defaults
+args <- commandArgs(
+  trailingOnly=TRUE, asValues=TRUE,
+  defaults=list(
+    out_dir=".",
+    n_sims="10",
+    n="50,100,250,1000",
+    delta="0.0,0.1",
+    n_cov="1",
+    rho="0.25,0.5",
+    monitor="anova,ancova",
+    final="anova,ancova",
+    correct="FALSE,TRUE",
+    afunc="obf,pocock",
+    stages="3",
+    ifracts="2",
+    alpha="0.05",
+    est_var="TRUE",
+    est_bounds="FALSE,TRUE",
+    desc="test"
+  )
+)
 
 # Output directory
-OUT_DIR <- args[1]
+OUT_DIR <- args$out_dir
 dir.create(OUT_DIR, recursive=TRUE)
 
 ERROR <- sprintf("%s/output", OUT_DIR)
 dir.create(ERROR, recursive=TRUE)
 
-# Number of simulations to run
-N_SIMS <- args[2]
+# Get the current git hash
+hash <- system("git rev-parse HEAD", intern=TRUE)
 
-# Parameter grid
+# Write description to a text file
+fileConn <- file(sprintf("%s/DESCRIPTION.txt", OUT_DIR))
+writeLines(c(
+  "DESCRIPTION: ",
+  args$desc,
+  "GIT HASH: ",
+  hash,
+  "DATE: ",
+  format(Sys.time(), "%d-%m-%y-%H")
+  ),
+  fileConn)
+close(fileConn)
+
+# Number of simulations to run
+N_SIMS <- as.integer(args$n_sims)
+
+# Parameter grid from arguments
 params <- list(
-  n=c(50, 100, 250, 1000),
-  delta=c(0.0, 0.1, 0.2, 0.5),
-  n_cov=c(1),
-  rho=c(0.25, 0.5),
-  monitor=c("anova", "ancova"),
-  final=c("anova", "ancova"),
-  correct=c(FALSE, TRUE),
-  afunc=c("obf", "pocock"),
-  stages=c(3),
-  ifracts=c(2),
-  alpha=c(0.05),
-  est_var=c(TRUE),
-  est_bounds=c(FALSE, TRUE)
+  n           = parse.args(args$n, as.integer),
+  delta       = parse.args(args$delta, as.numeric),
+  n_cov       = parse.args(args$n_cov, as.integer),
+  rho         = parse.args(args$rho, as.numeric),
+  monitor     = parse.args(args$monitor, as.character),
+  final       = parse.args(args$final, as.character),
+  correct     = parse.args(args$correct, as.logical),
+  afunc       = parse.args(args$afunc, as.character),
+  stages      = parse.args(args$stages, as.integer),
+  ifracts     = parse.args(args$ifracts, as.integer),
+  alpha       = parse.args(args$alpha, as.numeric),
+  est_var     = parse.args(args$est_var, as.logical),
+  est_bounds  = parse.args(args$est_bounds, as.logical)
 )
 
 # Save parameter list and number of tasks

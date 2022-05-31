@@ -7,43 +7,44 @@ source("../R/sim-bounds.R")
 source("../R/constants.R")
 source("../simulations/sim-utils.R")
 
-# DEBUGGING AND TESTING SET TO FALSE
+# WHEN DEBUGGING AND TESTING SET TO FALSE
 parallel <- TRUE
 
 # GET TASK ID FROM SGE
 if(parallel){
-  TASKID <- as.numeric(Sys.getenv("SGE_TASK_ID"))
   args <- commandArgs(trailingOnly=TRUE)
+
+  TASKID <- as.numeric(Sys.getenv("SGE_TASK_ID"))
   OUT_DIR <- args[1]
   N_SIMS <- as.integer(args[2])
+
+  # Read in parameter grid
+  param_grid <- read.csv(sprintf("%s/params.csv", OUT_DIR))
 } else {
-  TASKID <- 67
-  OUT_DIR <- "~/repos/RCTCovarAdjust/temp/"
+  TASKID <- 1
+  OUT_DIR <- "."
   N_SIMS <- 50
+
+  # Create a one-row parameter grid to test out examples
+  param_grid <- data.frame(
+    n=50,
+    delta=0.0,
+    n_cov=1,
+    rho=0.25,
+    monitor="anova",
+    final="ancova",
+    correct=TRUE,
+    afunc="obf",
+    stages=3,
+    ifracts=2,
+    alpha=0.05,
+    est_var=TRUE,
+    est_bounds=FALSE
+  )
 }
 
 # SET REPRODUCIBLE SEED
 set.seed(715)
-
-# PARAMETER GRID
-param_grid <- read.csv(sprintf("%s/params.csv", OUT_DIR))
-if(!parallel){
-  TASKID <- 3
-  param_grid <- data.table(param_grid)
-  param_grid <- param_grid[TASKID,]
-  param_grid[, rho := 0.5]
-  param_grid[, afunc := "obf"]
-  param_grid[, stages := 3]
-  param_grid[, delta := 0.1]
-  param_grid[, est_bounds := TRUE]
-  param_grid[, est_var := TRUE]
-  param_grid[, monitor := "anova"]
-  param_grid[, final := "ancova"]
-  param_grid[, correct := TRUE]
-  param_grid <- data.frame(param_grid)
-  param_grid <- rbind(param_grid, param_grid, param_grid, param_grid)
-  param_grid$n <- 1000
-}
 
 # PARAMETER GETTER FOR THIS TASK ID
 gp <- get.param.closure(TASKID, param_grid)

@@ -1,6 +1,6 @@
 #$ -S /bin/sh
 
-ALL="-n_sims ${1}"
+ALL="-n_sims ${2} -out_dir ~/rct/${1}"
 
 # Table 1 and A1
 R-4.0.1 --no-save --args ${ARGS} -desc "table 1 and A1 -- main results" < "sim-submit.R"

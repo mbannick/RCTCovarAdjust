@@ -13,7 +13,7 @@ args <- commandArgs(
     out_dir=".",
     n_sims="10",
     n="50,100,250,1000",
-    delta="0.0,0.1",
+    delta="0.0,0.1,0.2,0.5",
     n_cov="1",
     rho="0.25,0.5",
     monitor="anova,ancova",
@@ -24,13 +24,14 @@ args <- commandArgs(
     ifracts="2",
     alpha="0.05",
     est_var="TRUE",
-    est_bounds="FALSE,TRUE",
+    est_bounds="TRUE",
     desc="test"
   )
 )
 
 # Output directory
 OUT_DIR <- args$out_dir
+if(dir.exists(OUT_DIR)) stop("Output directory already exists.")
 dir.create(OUT_DIR, recursive=TRUE)
 
 ERROR <- sprintf("%s/output", OUT_DIR)

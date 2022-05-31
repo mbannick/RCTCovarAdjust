@@ -45,6 +45,8 @@ fileConn <- file(sprintf("%s/DESCRIPTION.txt", OUT_DIR))
 writeLines(c(
   "DESCRIPTION: ",
   args$desc,
+  "NUMBER SIMS: ",
+  args$n_sims,
   "GIT HASH: ",
   hash,
   "DATE: ",

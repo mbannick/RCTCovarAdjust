@@ -39,7 +39,8 @@ if(parallel){
     ifracts=2,
     alpha=0.05,
     est_var=TRUE,
-    est_bounds=FALSE
+    est_bounds=FALSE,
+    design_rho=0.25
   )
 }
 
@@ -66,7 +67,7 @@ b.func <- get.boundary.closure(
   rates=rates,
   est.bounds=gp("est_bounds"),
   a.type=gp("afunc"),
-  rho=gp("rho"),
+  rho=gp("design_rho"),
   n=gp("n"))
 
 # CLOSURE FUNCTIONS

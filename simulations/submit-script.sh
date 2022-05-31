@@ -16,3 +16,5 @@ EXTRA="-delta 0.0,0.1 -rho 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 -est_bounds FALSE
 # R-4.0.1 --no-save --args ${ARGS} -desc "figure 1 -- main results" ${EXTRA} < "sim-submit.R"
 
 # Figure A1
+EXTRA="-delta 0.0,0.1 -rho 0.5 -design_rho 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9 -est_bounds FALSE"
+# R-4.0.1 --no-save --args ${ARGS} -desc "figure 1 -- main results" ${EXTRA} < "sim-submit.R"

@@ -1,17 +1,20 @@
 library(data.table)
 library(ggplot2)
 
-# df <- fread("/Users/marlena/Documents/FileZilla/rct/run-24-02-22-2/summary.csv")
-# df0 <- fread("/Users/marlena/Documents/FileZilla/rct/run-10-04-22-2/summary.csv")
-# df <- fread("/Users/marlena/Documents/FileZilla/rct/run-16-05-22-5/summary-TEST.csv")
-# df <- fread("/Users/marlena/Documents/FileZilla/rct/run-17-02-22-6/summary.csv")
-df <- fread("/Users/marlena/Documents/FileZilla/rct/run-28-05-22-2/summary.csv")
-df <- df[stages == 3]
+# SET DIRECTORIES AND VERSION
+args <- commandArgs(TRUE)
+VERSION <- args[1]
+IN_DIR <- "/Users/marlena/Documents/FileZilla/rct/"
 
+# READ IN VERSION
+df <- fread(paste0(IN_DIR, VERSION, "/summary.csv"))
+
+# MAKE SURE THE VERSION HAS THE INFORMATION WE WANT
 df <- df[((type %in% c("un-adjusted", "adjusted",
            "inconsistent, naive", "inconsistent, corrected")) & est_bounds == TRUE) |
            (type == "inconsistent, corrected" & est_bounds == FALSE)]
 
+# LABEL BASED ON THE NUMBERING FOR THE PAPER
 df[type == "un-adjusted", label := "(A)(i)"]
 df[type == "adjusted", label := "(A)(ii)"]
 df[type == "inconsistent, naive", label := "(B)(i)"]
@@ -19,14 +22,10 @@ df[type == "inconsistent, corrected" & est_bounds == FALSE, label := "(B)(ii)"]
 df[type == "inconsistent, corrected" & est_bounds == TRUE, label := "(B)(iii)"]
 
 df[, n := as.factor(n)]
-df[, std := sqrt(power * (1 - power)) / sqrt(25000)]
-df[, lower := power - qnorm(0.975) * std]
-df[, upper := power + qnorm(0.975) * std]
-
 df[afunc == "obf", bound_type := "OBF"]
 df[afunc == "pocock", bound_type := "Pocock"]
 
-# Type I Error Plot
+# FIGURE 4 -----------------------------------
 
 pdf("~/repos/Group-Sequential-Trials-Paper/figures/type1error-2.pdf", height=5, width=10)
 ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho, y=power, color=label)) +
@@ -40,13 +39,9 @@ ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho, y=power, color=label)) 
   labs(color="Scenario", linetype="Boundary Type",
        y="Type I Error",
        x="Reduction in variance by using ANCOVA")
-  # geom_errorbar(aes(ymin=lower, ymax=upper, x=1-rho),
-  #               linetype='dashed', width=.1)
 dev.off()
 
-# ggplot(data=df[delta > 0 & stages == 3], aes(x=rho, y=power, color=n, linetype=afunc)) +
-#   facet_grid(type ~ delta) +
-#   geom_point() + geom_line()
+# FIGURE 4 -----------------------------------
 
 pdf("~/repos/Group-Sequential-Trials-Paper/figures/power-2.pdf", height=5, width=10)
 ggplot(data=df[delta == 0.1 & stages == 3], aes(x=1-rho, y=power, color=label)) +

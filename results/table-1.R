@@ -66,6 +66,7 @@ addtorow$pos <- seq(4, nrow(df.sub2), by=4) %>% as.list
 addtorow$command <- rep("\\hline \n", length(addtorow$pos))
 
 tab <- xtable(df.sub2, align=rep("c", 10), digits=2,
-              caption=paste0("Simulation results for ", AFUNC))
+              caption=paste0("Simulation results for ", AFUNC,
+                             " version: ", VERSION))
 print(tab, include.rownames=FALSE,
       add.to.row = addtorow)

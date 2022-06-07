@@ -26,7 +26,7 @@ args <- commandArgs(
     est_var="TRUE",
     est_bounds="TRUE",
     desc="test",
-    design_rho=NA
+    design_rho=NULL
   )
 )
 
@@ -75,7 +75,7 @@ params <- list(
   est_var     = parse.args(args$est_var, as.logical),
   est_bounds  = parse.args(args$est_bounds, as.logical)
 )
-if(!is.na(args$design_rho)){
+if(!is.null(args$design_rho)){
   params[["design_rho"]] <- parse.args(args$design_rho, as.numeric)
 }
 
@@ -83,7 +83,7 @@ if(!is.na(args$design_rho)){
 param_grid <- expand.grid(params)
 param_grid <- data.table(param_grid)
 
-if(is.na(args$design_rho)){
+if(is.null(args$design_rho)){
   param_grid[, design_rho := rho]
 }
 param_grid <- param_grid[!(monitor == "anova" & final == "anova" & correct == T)]

@@ -8,28 +8,42 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 #' Get Pocock or OBF-type boundaries by correlation matrix.
 #' Compute boundaries based on a correlation matrix between
 #' the test statistics.
-get.bound.by.corr <- function(corr, obf=FALSE,
+get.bound.by.corr <- function(corr, obf=FALSE, unequal_type=FALSE,
+                              t_k=NULL,
                               power=0.05, algorithm=Miwa(steps=1000)){
   K <- nrow(corr)
+  if(length(t_k) != K) stop("Information fractions vector must
+                            be same size as correlation matrix.")
+  bound.func <- function(c){
+    if(obf){
+      if(!unequal_type){
+        u <- c / sqrt(1:K)
+      } else {
+        if(is.null(t_k)){
+          stop("Must provide information fractions if desire OBF bounds
+             with unequal sample size constant correction (eq. 3.7 in Wassmer and Brannath).")
+        } else {
+          u <- c / sqrt(t_k/t_k[1])
+        }
+      }
+    } else {
+      u <- rep(c, K)
+    }
+    return(u)
+  }
   get.power <- function(c){
-
-    u_k <- rep(c, K)
-    if(obf) u_k <- u_k / sqrt(1:K)
+    u_k <- bound.func(c)
 
     val <- 1 - pmvnorm(lower=-u_k,
                        upper=u_k,
                        mean=rep(0, K), corr=corr,
                        algorithm=algorithm)
+    return(val)
   }
   f <- function(x) get.power(x) - power
   s <- uniroot(f, interval=c(0, 100))
 
-  if(obf){
-    return(s$root / sqrt(1:K))
-  } else {
-    return(rep(s$root, K))
-  }
-
+  return(bound.func(s$root))
 }
 
 #' Root solve for a particular alpha level, two-sided.
@@ -64,13 +78,15 @@ solve.boundary <- function(power, corr=NULL, u_k=NULL,
 #' @param rho Fraction of variance explained by fitting ANCOVA.
 #' @param change A vector indicating which stages use ANOVA v. ANCOVA.
 #' @examples
-#' t <- 1:4/4
+#' t <- 1:3/3
 #'
 #' # approximate Pocock boundaries
-#' get.boundaries.design(rates=t, obf=FALSE)
-#' get.boundaries.design(rates=t, obf=FALSE, rho=0.1, change=c(0, 1, 0, 0))
-#' get.boundaries.design(rates=t, obf=TRUE, rho=0.1, change=c(1, 0, 0, 0))
-get.boundaries.design <- function(rates, obf,
+#' get.boundaries.design(rates=t, obf=TRUE)
+#' get.boundaries.design(rates=c(0.3, 0.9, 1.0), obf=TRUE)
+#' get.boundaries.design(rates=c(0.3, 0.9, 1.0), obf=TRUE, unequal_type=TRUE)
+#' get.boundaries.design(rates=c(0.3, 0.9, 1.0), obf=TRUE, unequal_type=TRUE, rho=0.2, change=c(0, 0, 1))
+#' get.boundaries.design(rates=t, obf=TRUE, rho=0.1, change=c(1, 0, 0))
+get.boundaries.design <- function(rates, obf, unequal_type=FALSE,
                                   rho=1, change=0,
                                   algorithm=Miwa(steps=1000)){
 
@@ -79,7 +95,7 @@ get.boundaries.design <- function(rates, obf,
                                            the same length as the number of stages.")
 
   corr <- corr.mat(rates, rho=rho, mis=as.logical(change))
-  bounds <- get.bound.by.corr(corr, obf=obf)
+  bounds <- get.bound.by.corr(corr, t_k=rates, obf=obf, unequal_type=unequal_type)
   return(bounds)
 }
 

@@ -4,6 +4,7 @@ library(ggplot2)
 library(magrittr)
 
 args <- commandArgs(TRUE)
+in_dir <- "/Users/marlena/Documents/FileZilla/rct/run-08-06-22-1/"
 in_dir <- args[1]
 setwd(in_dir)
 
@@ -24,11 +25,16 @@ get.results <- function(file){
   truth <- c(parameters[param == param_id, delta])
 
   load(file)
-  power <- mean(result$reject)
-  bias_naive <- mean(result$est - truth)
-  bias_corr <- mean(result$point - truth)
-  bias_naive_med <- median(result$est - truth)
-  bias_corr_med <- median(result$point - truth)
+  power <- mean(unlist(result$reject))
+  bias_naive <- mean(unlist(result$est) - truth)
+  bias_corr <- mean(unlist(result$point) - truth)
+  bias_naive_med <- median(unlist(result$est) - truth)
+  bias_corr_med <- median(unlist(result$point) - truth)
+
+  if(dim(result$naive_ci)[2] > 2){
+    result$naive_ci <- do.call(rbind, result$naive_ci)
+    result$ci <- do.call(rbind, result$ci)
+  }
 
   cover_naive <- mean((result$naive_ci[, 1] <= truth) & (result$naive_ci[, 2] >= truth))
   cover_corr <- mean(result$ci[, 1] <= truth & (result$ci[, 2] >= truth))

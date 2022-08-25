@@ -54,6 +54,11 @@ procedure.closure <- function(monitor, final, correct, rates,
       X <- data_list[[i]]$X
       y <- data_list[[i]]$y
 
+      if(length(unique(X[, "t"])) == 1){
+        warning("Cannot perform analysis if all randomized to same group.")
+        return()
+      }
+
       if(is.na(monitor_var)){
         rho <- estimate.rho(X, y)
       } else {

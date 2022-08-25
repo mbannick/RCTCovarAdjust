@@ -12,6 +12,7 @@ get.bound.by.corr <- function(corr, obf=FALSE, unequal_type=FALSE,
                               t_k=NULL,
                               power=0.05, algorithm=Miwa(steps=1000)){
   K <- nrow(corr)
+  browser()
   if(length(t_k) != K) stop("Information fractions vector must
                             be same size as correlation matrix.")
   bound.func <- function(c){

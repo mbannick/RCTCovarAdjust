@@ -23,7 +23,7 @@ if(parallel){
 } else {
   TASKID <- 1
   OUT_DIR <- "."
-  N_SIMS <- 50
+  N_SIMS <- 10
 
   # Create a one-row parameter grid to test out examples
   param_grid <- data.frame(

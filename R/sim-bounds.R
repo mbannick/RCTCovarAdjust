@@ -49,7 +49,9 @@ get.boundary.closure <- function(a.func, rates, est.bounds, a.type,
       K <- length(rates)
       n_k <- nk.from.rates(n, rates)
       corr <- corr.mat(n_k=cumsum(n_k), rho=rho, mis=c(rep(F, K-1), inflate))
-      bounds <- get.bound.by.corr(corr, obf=(a.type=="obf"))
+      bounds <- get.bound.by.corr(corr, t_k=rates,
+                                  obf=(a.type=="obf"),
+                                  power=a_spend[i])
       return(bounds)
     }
   }

@@ -1,5 +1,6 @@
-# SIMULATION SUBMISSION SCRIPT
-# ----------------------------
+# PARALLEL SIMULATION SUBMISSION SCRIPT
+# DO NOT RUN THIS LOCALLY, WILL TRY TO SUBMIT JOBS
+# ------------------------------------------------
 library(magrittr)
 library(data.table)
 library(R.utils)

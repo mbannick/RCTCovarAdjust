@@ -51,7 +51,6 @@ procedure.closure <- function(monitor, final, correct, rates,
     # (so, getting bounds at the design stage)
     # potentially inflate all the monitoring boundaries
     # if "correct". Otherwise, boundaries are not corrected.
-    browser()
     if(!est.bounds){
       inflate <- (monitor != final) & correct
       pre_bounds <- b.func(inflate)
@@ -77,7 +76,6 @@ procedure.closure <- function(monitor, final, correct, rates,
       } else {
         rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))
       }
-      browser()
 
       # End stage tells us if we're at the end of the trial
       end_stage <- i == length(data_list)

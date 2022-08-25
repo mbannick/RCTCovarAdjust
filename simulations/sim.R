@@ -30,16 +30,16 @@ if(parallel){
     n=100,
     delta=0.0,
     n_cov=1,
-    rho=0.9,
+    rho=1.0,
     monitor="anova",
     final="ancova",
-    correct=TRUE,
-    afunc="pocock",
+    correct=FALSE,
+    afunc="obf",
     stages=3,
     ifracts=1,
     alpha=0.05,
     est_var=TRUE,
-    est_bounds=FALSE,
+    est_bounds=TRUE,
     design_rho=1.0
   )
 }

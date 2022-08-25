@@ -13,4 +13,7 @@ R --no-save --args run-23-05-22-1 obf < "table-1.R"
 R --no-save --args run-30-05-22-7 pocock < "table-1.R"
 
 # Table A3
-R --no-save --args run-30-05-22-8 pocock < "table-1.R"
+R --no-save --args run-08-06-22-1 pocock < "table-1.R"
+
+# Figure A1
+R --no-save --args run-08-06-22-2 < "figure-A1.R"

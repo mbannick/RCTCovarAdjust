@@ -5,7 +5,7 @@ library(viridis)
 
 # SET DIRECTORIES AND VERSION
 args <- commandArgs(TRUE)
-VERSION <- "run-07-06-22-8"
+VERSION <- args[1]
 IN_DIR <- "/Users/marlena/Documents/FileZilla/rct/"
 
 # READ IN VERSION
@@ -53,7 +53,7 @@ ggplot(data=df[delta == 0.0],
        x="Reduction in variance by using ANCOVA") +
   geom_text(data=ann_text, aes(label=lab), size=3) +
   geom_segment(
-    x = 0.5, xend = 0.53, y = 0.083, yend = 0.08,
+    x = 0.5, xend = 0.53, y = 0.083, yend = 0.0775,
     arrow = arrow(length = unit(5, "pt")),
     data=ann_text
   ) +

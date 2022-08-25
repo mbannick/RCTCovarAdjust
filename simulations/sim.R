@@ -8,7 +8,7 @@ source("../R/constants.R")
 source("../simulations/sim-utils.R")
 
 # WHEN DEBUGGING AND TESTING SET TO FALSE
-parallel <- TRUE
+parallel <- FALSE
 
 # GET TASK ID FROM SGE
 if(parallel){
@@ -27,20 +27,20 @@ if(parallel){
 
   # Create a one-row parameter grid to test out examples
   param_grid <- data.frame(
-    n=50,
+    n=100,
     delta=0.0,
     n_cov=1,
-    rho=0.25,
+    rho=0.9,
     monitor="anova",
     final="ancova",
     correct=TRUE,
-    afunc="obf",
+    afunc="pocock",
     stages=3,
-    ifracts=2,
+    ifracts=1,
     alpha=0.05,
     est_var=TRUE,
     est_bounds=FALSE,
-    design_rho=0.25
+    design_rho=1.0
   )
 }
 

@@ -4,7 +4,6 @@ library(ggplot2)
 library(magrittr)
 
 args <- commandArgs(TRUE)
-in_dir <- "/Users/marlena/Documents/FileZilla/rct/run-08-06-22-1/"
 in_dir <- args[1]
 setwd(in_dir)
 

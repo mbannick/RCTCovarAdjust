@@ -27,29 +27,39 @@ procedure.closure <- function(monitor, final, correct, rates,
   procedure <- function(data_list){
     cat(".")
 
+    # Get the variance functions for monitoring and final stage
     monitor_var <- v.func(monitor == "ancova")
     final_var <- v.func(final == "ancova")
 
+    # Get the functions to get test statistic for monitoring and final stage
     monitor.func <- fit.model.closure(monitor == "ancova", known_var=monitor_var)
     final.func <- fit.model.closure(final == "ancova", known_var=final_var)
 
+    # Total alpha to spend
     total.alpha <- a.func(1)
 
     i <- 0
     bounds <- c()
     reject <- FALSE
 
+    # Get sample sizes for this simulation at each stage
     n_K <- nrow(data_list[[length(data_list)]]$X)
     n_k <- rates * n_K
     K <- length(n_k)
 
+    # If we are not estimating boundaries
+    # (so, getting bounds at the design stage)
+    # potentially inflate all the monitoring boundaries
+    # if "correct". Otherwise, boundaries are not corrected.
     if(!est.bounds){
       inflate <- (monitor != final) & correct
       pre_bounds <- b.func(inflate)
     }
 
+    # Loop through each of the stages of the trial.
     while(!reject & (i < length(data_list))){
 
+      # Data list[i] contains all data collected up through stage i
       i <- i + 1
       X <- data_list[[i]]$X
       y <- data_list[[i]]$y
@@ -59,13 +69,19 @@ procedure.closure <- function(monitor, final, correct, rates,
         return()
       }
 
+      # Get an estimate (or true value) of
+      # rho (the reduction in variance using to ANCOVA).
       if(is.na(monitor_var)){
         rho <- estimate.rho(X, y)
       } else {
         rho <- sqrt(v.func(ancova=TRUE) / v.func(ancova=FALSE))
       }
 
+      # End stage tells us if we're at the end of the trial
       end_stage <- i == length(data_list)
+
+      # Match tells us if there is no switch between methods
+      # from monitoring to final stage inference
       match <- monitor == final
 
       if(end_stage){

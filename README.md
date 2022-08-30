@@ -2,18 +2,16 @@
 
 Derive rejection boundaries for randomized controlled trials when using (potentially only sometimes) covariate adjustment.
 
-## Installation
-
-You can install the package with devtools:
-
-```
-devtools::install_github("mbannick/RCTCovarAdjust")
-```
-
-Or to download the package you may clone the repository:
-
+To clone the repository:
 ```
 git clone https://github.com/mbannick/RCTCovarAdjust.git
-cd RCTCovarAdjust
-R CMD INSTALL .
 ```
+
+## Pre-Print:
+
+### [*Accounting for Inconsistent Use of Covariate Adjustment in Group Sequential Trials*](https://arxiv.org/abs/2206.12393)
+
+Marlena S. Bannick, Sonya L. Heltshe, Noah Simon
+
+- See `./simulations/` for code to run the simulations in the above preprint.
+- See `./results/` for code to create the tables and figures in the above preprint.

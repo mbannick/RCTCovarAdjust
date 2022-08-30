@@ -61,9 +61,6 @@ setnames(results, c("param", "power", "bias_naive", "bias_corr",
                     potential_stages))
 
 df <- merge(parameters, results, by="param")
-# df[, std := sqrt(power * (1 - power)) / sqrt(1000)]
-# df[, lower := power - qnorm(0.975) * std]
-# df[, upper := power + qnorm(0.975) * std]
 
 df[monitor == "anova" & final == "anova", type := "un-adjusted"]
 df[monitor == "ancova" & final == "ancova", type := "adjusted"]

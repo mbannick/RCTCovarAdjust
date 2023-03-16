@@ -9,7 +9,7 @@ To clone the repository:
 git clone https://github.com/mbannick/RCTCovarAdjust.git
 ```
 
-To see functions available with their documentation, visit the Reference page.
+To see functions available with their documentation, visit the Reference page in [the docs](https://www.marlenabannick.com/RCTCovarAdjust)
 
 ### Pre-Print:
 

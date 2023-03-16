@@ -2,11 +2,17 @@
 # Use these to generate alpha spending functions
 # for a fixed alpha level.
 
+#' O'Brien-Fleming approximation, alpha spending function
+#' @param a Alpha level
+#' @export
 obf.spend <- function(a){
   func <- function(t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
   return(func)
 }
 
+#' Pocock approximation, alpha spending function
+#' @param a Alpha level
+#' @export
 pocock.spend <- function(a){
   func <- function(t) a * log(1 + (exp(1) - 1) * t)
   return(func)

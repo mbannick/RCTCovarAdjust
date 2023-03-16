@@ -7,9 +7,11 @@ To clone the repository:
 git clone https://github.com/mbannick/RCTCovarAdjust.git
 ```
 
-## Pre-Print:
+To see functions available with their documentation, visit the Reference page.
 
-### [*Accounting for Inconsistent Use of Covariate Adjustment in Group Sequential Trials*](https://arxiv.org/abs/2206.12393)
+### Pre-Print:
+
+#### [*Accounting for Inconsistent Use of Covariate Adjustment in Group Sequential Trials*](https://arxiv.org/abs/2206.12393)
 
 Marlena S. Bannick, Sonya L. Heltshe, Noah Simon
 

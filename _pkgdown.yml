@@ -2,14 +2,20 @@ template:
   params:
     bootswatch: sandstone
 reference:
-- title: "Simulating datasets"
-  desc: >
-    Functions for simulating group sequential trial datasets.
-- contents:
-  - create.simulations
-- title: "Compute boundaries"
+- title: "Construct monitoring boundaries"
   desc: >
     Functions to compute rejection boundaries
 - contents:
-  - get.boundaries
+  - get.boundaries.design
   - get.boundaries.aspend
+- title: "Get adjusted p-values"
+  desc: >
+    Functions to compute adjusted p-values
+- contents:
+  - get.pvalue.sw
+- title: "Alpha-spending"
+  desc: >
+    Alpha-spending functions
+- contents:
+  - pocock.spend
+  - obf.spend

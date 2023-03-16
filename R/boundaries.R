@@ -1,13 +1,12 @@
-library(magrittr)
-library(MASS)
-library(mvtnorm)
+# source("~/repos/RCTCovarAdjust/R/constants.R")
+# source("~/repos/RCTCovarAdjust/R/covariance.R")
 
-source("~/repos/RCTCovarAdjust/R/constants.R")
-source("~/repos/RCTCovarAdjust/R/covariance.R")
-
-#' Get Pocock or OBF-type boundaries by correlation matrix.
-#' Compute boundaries based on a correlation matrix between
-#' the test statistics.
+# #' Get Pocock or OBF-type boundaries by correlation matrix.
+# #' Compute boundaries based on a correlation matrix between
+# #' the test statistics.
+# #'
+# #' @import MASS
+# #' @import mvtnorm
 get.bound.by.corr <- function(corr, obf=FALSE, unequal_type=FALSE,
                               t_k=NULL,
                               power=0.05, algorithm=Miwa(steps=1000)){
@@ -46,14 +45,17 @@ get.bound.by.corr <- function(corr, obf=FALSE, unequal_type=FALSE,
   return(bound.func(s$root))
 }
 
-#' Root solve for a particular alpha level, two-sided.
-#'
-#' @param power The cumulative type I error (or power generally) to solve for.
-#' @param corr Correlation matrix for the test statistics.
-#' @param mean Mean vector for the multivariate normal. Defaults to 0.
-#' @param u_k Previous boundaries, in a matrix.
-#' @param tol Tolerance parameter for binary search.
-#' @param ... Additional arguments for pmvnorm algorithm.
+# #' Root solve for a particular alpha level, two-sided.
+# #'
+# #' @param power The cumulative type I error (or power generally) to solve for.
+# #' @param corr Correlation matrix for the test statistics.
+# #' @param mean Mean vector for the multivariate normal. Defaults to 0.
+# #' @param u_k Previous boundaries, in a matrix.
+# #' @param tol Tolerance parameter for binary search.
+# #' @param ... Additional arguments for pmvnorm algorithm.
+# #'
+# #' @import MASS
+# #' @import mvtnorm
 solve.boundary <- function(power, corr=NULL, u_k=NULL,
                            tol=.Machine$double.eps, algorithm=Miwa(steps=1000)){
   if(is.null(u_k)){
@@ -72,20 +74,29 @@ solve.boundary <- function(power, corr=NULL, u_k=NULL,
 #' Get Pocock or OBF-style boundaries at the design stage
 #'
 #' @export
-#' @param obf
+#' @param obf Whether to use OBF (TRUE) or Pocock (FALSE)
 #' @param rates A vector of information rates (between 0 and 1)
-#' @param u_k An optional matrix of previous boundaries
+#' @param unequal_type Correction for unequal sample sizes across stage
 #' @param rho Fraction of variance explained by fitting ANCOVA.
 #' @param change A vector indicating which stages use ANOVA v. ANCOVA.
+#'
+#' @import MASS
+#' @import mvtnorm
+#' @export
 #' @examples
+#' # Information fractions
 #' t <- 1:3/3
 #'
-#' # approximate Pocock boundaries
+#' # OBF-type boundaries
 #' get.boundaries.design(rates=t, obf=TRUE)
 #' get.boundaries.design(rates=c(0.3, 0.9, 1.0), obf=TRUE)
 #' get.boundaries.design(rates=c(0.3, 0.9, 1.0), obf=TRUE, unequal_type=TRUE)
-#' get.boundaries.design(rates=c(0.3, 0.9, 1.0), obf=TRUE, unequal_type=TRUE, rho=0.2, change=c(0, 0, 1))
-#' get.boundaries.design(rates=t, obf=TRUE, rho=0.1, change=c(1, 0, 0))
+#'
+#' # ANCOVA at last stage, R^2 = 0.5
+#' get.boundaries.design(rates=c(0.3, 0.9, 1.0), obf=TRUE, unequal_type=TRUE, rho=sqrt(0.5), change=c(0, 0, 1))
+#'
+#' # ANCOVA at last two stages, R^2 = 0.5
+#' get.boundaries.design(rates=t, obf=TRUE, rho=sqrt(0.5), change=c(1, 0, 0))
 get.boundaries.design <- function(rates, obf, unequal_type=FALSE,
                                   rho=1, change=0,
                                   algorithm=Miwa(steps=1000)){
@@ -116,14 +127,16 @@ get.boundaries.design <- function(rates, obf, unequal_type=FALSE,
 #' @param u_k An optional matrix of previous boundaries
 #' @param rho Fraction of variance explained by fitting ANCOVA.
 #' @param change A vector indicating which stages use ANOVA v. ANCOVA.
+#' @import MASS
+#' @import mvtnorm
 #' @examples
-#' # information rates
+#' # Information rates
 #' t <- 1:4/4
 #'
-#' # approximate Pocock boundaries
+#' # Approximate Pocock boundaries, with R^2 = 0.5, ANCOVA at last stage
 #' get.boundaries.aspend(a.func=pocock.spend(0.05), rates=t)
 #' get.boundaries.aspend(a.func=pocock.spend(0.05), rates=t,
-#'                       rho=0.5, change=c(0, 0, 0, 1))
+#'                       rho=sqrt(0.5), change=c(0, 0, 0, 1))
 get.boundaries.aspend <- function(a.func, rates,
                                   u_k=NULL, rho=1, change=0,
                                   algorithm=Miwa(steps=1000)){

@@ -6,37 +6,25 @@
 \usage{
 get.boundaries.aspend(
   a.func,
-  a,
   rates,
-  N,
-  n_sims,
-  stat.func,
-  data.generator,
-  ...
+  u_k = NULL,
+  rho = 1,
+  change = 0,
+  algorithm = Miwa(steps = 1000)
 )
 }
 \arguments{
 \item{a.func}{A continuous, monotonic increasing function of t
-where a.func(a, t=0) = 0 and a.func(a, t=1) = a
+where a.func(0) = 0 and a.func(1) = a
 where a is the type I error desired}
-
-\item{a}{The type I error desired}
 
 \item{rates}{A vector of information rates (between 0 and 1)}
 
-\item{N}{maximum total sample size}
+\item{u_k}{An optional matrix of previous boundaries}
 
-\item{n_sims}{Number of Monte-Carlo simulations}
+\item{rho}{Fraction of variance explained by fitting ANCOVA.}
 
-\item{stat.func}{Function (or list of functions)
-to calculate the test statistic based on the generated data, at each
-observed information rates. If this is a list
-of functions, it needs to be the same length as the sequence of boundaries.}
-
-\item{data.generator}{Function to generate data. The output of this function
-should be a matrix, which is the input for stat.func.
-First argument of this function needs to be n, the sample size, and the function
-needs to be vectorized.}
+\item{change}{A vector indicating which stages use ANOVA v. ANCOVA.}
 }
 \description{
 Get the boundaries required for a particular alpha-spending function
@@ -48,21 +36,11 @@ under the null hypothesis in order for this function to work correctly
 with alpha-spending.
 }
 \examples{
-set.seed(101)
-# information rates
-t <- 1:3/3
+# Information rates
+t <- 1:4/4
 
-# approximate Pocock boundaries
-a.func.pocock <- function(a, t) a * log(1 + (exp(1) - 1) * t)
-get.boundaries.aspend(a.func=a.func.pocock, a=0.05,
-                      rates=t, N=1000, n_sims=1000,
-                      stat.func=function(x) mean(x) * sqrt(length(x)),
-                      data.generator=function(n) rnorm(n))
-
-# approximate O'Brien-Fleming boundaries
-a.func.obf <- function(a, t) 4 * (1 - pnorm(qnorm(1-a/4)/sqrt(t)))
-get.boundaries.aspend(a.func=a.func.obf, a=0.05,
-                      rates=t, N=1000, n_sims=1000,
-                      stat.func=function(x) mean(x) * sqrt(length(x)),
-                      data.generator=function(n) rnorm(n))
+# Approximate Pocock boundaries, with R^2 = 0.5, ANCOVA at last stage
+get.boundaries.aspend(a.func=pocock.spend(0.05), rates=t)
+get.boundaries.aspend(a.func=pocock.spend(0.05), rates=t,
+                      rho=sqrt(0.5), change=c(0, 0, 0, 1))
 }

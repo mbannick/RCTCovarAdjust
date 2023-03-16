@@ -1,9 +1,10 @@
 library(latex2exp)
+library(mvtnorm)
 source("~/repos/RCTCovarAdjust/R/covariance.R")
 
-K <- 4
-pocock_10_vec <- get.boundaries.design(obf=FALSE, rho=1, rates=(1:K/K))
-obf_10_vec <- get.boundaries.design(obf=TRUE, rho=1, rates=(1:K/K))
+K <- 2
+pocock_10_vec <- get.boundaries.design(obf=FALSE, rho=1, rates=(1:K/K), change=c(0, 1))
+obf_10_vec <- get.boundaries.design(obf=TRUE, rho=1, rates=(1:K/K), change=c(0, 1))
 
 pdf("~/repos/SLAB-Lab-WIN-2022/bounds.pdf", height=5, width=9)
 
@@ -31,6 +32,7 @@ dev.off()
 t <- seq(0, 1, by=0.01)
 
 pdf("~/repos/SLAB-Lab-WIN-2022/bounds-alpha.pdf", height=5, width=5)
+pdf("~/repos/CAUSAL-READING-GROUP-AUT-2022/alpha-spending.pdf", height=5, width=5)
 plot(t, obf.spend(0.05)(t), type='l', main="Alpha-Spending Functions",
      font.main=1, ylab=TeX("$\\alpha^*(t)$"), xlab="Information Accrued, t")
 lines(t, pocock.spend(0.05)(t), type='l', col='purple')

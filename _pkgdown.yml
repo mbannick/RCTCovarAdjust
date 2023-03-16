@@ -1,6 +1,6 @@
 template:
   params:
-    bootswatch: yeti
+    bootswatch: sandstone
 reference:
 - title: "Construct monitoring boundaries"
   desc: >

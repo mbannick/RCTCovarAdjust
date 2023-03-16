@@ -2,6 +2,7 @@ Package: RCTCovarAdjust
 Type: Package
 Title: Monitoring boundaries in Inconsistent Covariate Adjustment
 Version: 0.1.0
+Author: Marlena Bannick
 Maintainer: Marlena Bannick <mnorwood@uw.edu>
 License: MIT + file LICENSE
 Encoding: UTF-8

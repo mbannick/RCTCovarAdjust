@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7036090.svg)](https://doi.org/10.5281/zenodo.7036090)
+
 # RCTCovarAdjust
 
 Derive rejection boundaries for randomized controlled trials when using (potentially only sometimes) covariate adjustment.

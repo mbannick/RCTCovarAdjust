@@ -28,7 +28,7 @@ df[afunc == "pocock", bound_type := "Pocock"]
 # FIGURE 4 -----------------------------------
 
 pdf("~/repos/Group-Sequential-Trials-Paper/figures/type1error-2.pdf", height=5, width=10)
-ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho, y=power, color=label)) +
+ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho**2, y=power, color=label)) +
   facet_grid(bound_type ~ n) +
   geom_point() +
   geom_hline(yintercept=0.05, linetype="dashed", color="black") +
@@ -44,7 +44,7 @@ dev.off()
 # FIGURE 4 -----------------------------------
 
 pdf("~/repos/Group-Sequential-Trials-Paper/figures/power-2.pdf", height=5, width=10)
-ggplot(data=df[delta == 0.1 & stages == 3], aes(x=1-rho, y=power, color=label)) +
+ggplot(data=df[delta == 0.1 & stages == 3], aes(x=1-rho**2, y=power, color=label)) +
   facet_grid(bound_type ~ n) +
   geom_point() + geom_line() +
   scale_color_brewer(palette="Set1") +

@@ -1,5 +1,5 @@
-# source("~/repos/RCTCovarAdjust/R/constants.R")
-# source("~/repos/RCTCovarAdjust/R/covariance.R")
+source("~/repos/RCTCovarAdjust/R/constants.R")
+source("~/repos/RCTCovarAdjust/R/covariance.R")
 
 # #' Get Pocock or OBF-type boundaries by correlation matrix.
 # #' Compute boundaries based on a correlation matrix between

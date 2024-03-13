@@ -3,11 +3,12 @@ library(ggplot2)
 
 # SET DIRECTORIES AND VERSION
 args <- commandArgs(TRUE)
-VERSION <- args[1]
+# VERSION <- args[1]
+VERSION <- "run-25-08-22-1"
 IN_DIR <- "/Users/marlena/Documents/FileZilla/rct/"
 
 # READ IN VERSION
-df <- fread(paste0(IN_DIR, VERSION, "/summary.csv"))
+df <- fread(paste0(IN_DIR, VERSION, "/figure1/summary.csv"))
 
 # MAKE SURE THE VERSION HAS THE INFORMATION WE WANT
 df <- df[((type %in% c("un-adjusted", "adjusted",
@@ -27,8 +28,8 @@ df[afunc == "pocock", bound_type := "Pocock"]
 
 # FIGURE 4 -----------------------------------
 
-pdf("~/repos/Group-Sequential-Trials-Paper/figures/type1error-2.pdf", height=5, width=10)
-ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho**2, y=power, color=label)) +
+# pdf("~/repos/Group-Sequential-Trials-Paper/figures/type1error-2.pdf", height=5, width=10)
+plot1 <- ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho**2, y=power, color=label)) +
   facet_grid(bound_type ~ n) +
   geom_point() +
   geom_hline(yintercept=0.05, linetype="dashed", color="black") +
@@ -39,12 +40,15 @@ ggplot(data=df[delta == 0.0 & stages == 3], aes(x=1-rho**2, y=power, color=label
   labs(color="Scenario", linetype="Boundary Type",
        y="Type I Error",
        x="Reduction in variance by using ANCOVA")
-dev.off()
+ggsave("~/OneDrive/Documents/2023-2024/GST-SIM-Revision/figures/Figure4.tiff",
+       height=5, width=10, plot=plot1, dpi=600, units="in", bg = "white")
+
+# dev.off()
 
 # FIGURE 4 -----------------------------------
 
-pdf("~/repos/Group-Sequential-Trials-Paper/figures/power-2.pdf", height=5, width=10)
-ggplot(data=df[delta == 0.1 & stages == 3], aes(x=1-rho**2, y=power, color=label)) +
+# pdf("~/repos/Group-Sequential-Trials-Paper/figures/power-2.pdf", height=5, width=10)
+plot2 <- ggplot(data=df[delta == 0.1 & stages == 3], aes(x=1-rho**2, y=power, color=label)) +
   facet_grid(bound_type ~ n) +
   geom_point() + geom_line() +
   scale_color_brewer(palette="Set1") +
@@ -53,4 +57,7 @@ ggplot(data=df[delta == 0.1 & stages == 3], aes(x=1-rho**2, y=power, color=label
   labs(color="Scenario", linetype="Boundary Type",
        x="Reduction in variance by using ANCOVA",
        y="Power")
-dev.off()
+ggsave("~/OneDrive/Documents/2023-2024/GST-SIM-Revision/figures/Figure5.tiff",
+       height=5, width=10, plot=plot2, dpi=600, units="in", bg = "white")
+
+# dev.off()

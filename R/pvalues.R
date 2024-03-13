@@ -1,8 +1,8 @@
 library(magrittr)
 library(MASS)
 library(mvtnorm)
-source("~/repos/RCTCovarAdjust/R/covariance.R")
-source("~/repos/RCTCovarAdjust/R/boundaries.R")
+# source("~/repos/RCTCovarAdjust/R/covariance.R")
+# source("~/repos/RCTCovarAdjust/R/boundaries.R")
 
 .check.type <- function(type){
   if(!type %in% c("two-sided", "lower", "upper")) stop(
@@ -57,23 +57,23 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   return(val)
 }
 
-#' Get the probability of rejecting at stage k.
-#' We need this to return a two-element vector because
-#' for the orderings, crossing lower *or* upper boundaries
-#' is important.
-#'
-#' @param u_k Vector of boundaries up through stage k
-#' @param corr Correlation matrix for test statistics
-#'
-#' @examples
-#' u_k <- c(4.332634, 2.963132, 2.359044)
-#' u_k1 <- cbind(-u_k, u_k)
-#' u_k2 <- cbind(rep(-Inf, 3), u_k)
-#' n_k <- c(10, 20, 30)
-#' corr.1 <- corr.mat(n_k)
-#' corr.2 <- corr.mat(n_k, rho=0.5, mis=c(F, F, T))
-#' .reject.prob.k(u_k=u_k1, corr=corr.1)
-#' .reject.prob.k(u_k=u_k2, corr=corr.1)
+# #' Get the probability of rejecting at stage k.
+# #' We need this to return a two-element vector because
+# #' for the orderings, crossing lower *or* upper boundaries
+# #' is important.
+# #'
+# #' @param u_k Vector of boundaries up through stage k
+# #' @param corr Correlation matrix for test statistics
+# #'
+# #' @examples
+# #' u_k <- c(4.332634, 2.963132, 2.359044)
+# #' u_k1 <- cbind(-u_k, u_k)
+# #' u_k2 <- cbind(rep(-Inf, 3), u_k)
+# #' n_k <- c(10, 20, 30)
+# #' corr.1 <- corr.mat(n_k)
+# #' corr.2 <- corr.mat(n_k, rho=0.5, mis=c(F, F, T))
+# #' .reject.prob.k(u_k=u_k1, corr=corr.1)
+# #' .reject.prob.k(u_k=u_k2, corr=corr.1)
 .reject.prob.k <- function(u_k, corr, alt){
 
   if(!"matrix" %in% class(u_k)) u_k <- matrix(u_k, nrow=1)
@@ -221,69 +221,44 @@ source("~/repos/RCTCovarAdjust/R/boundaries.R")
   return(c(p.lower, p.upper))
 }
 
-#' Get a stage-wise p-value
+#' Get a stage-wise p-value after the trial is complete.
 #'
 #' @param obs Observed z-statistic
-#' @param u_k Matrix of boundaries for *previous* stages.
+#' @param u_k Matrix of boundaries for *previous* stages (if last_stage = F)
 #'            There should be two columns, one for lower bound, one for upper.
 #'            This allows asymmetric boundaries.
-#' @param corr Correlation matrix for test statistics
-#' @param ... Additional arguments for pmvnorm
+#' @param k_r Stage trial ended
+#' @param rho sqrt(R^2)
+#' @param ancova_monitor Whether to monitor with ANCOVA
+#' @param ancova_test Whether to get final inferene with ANCOVA
+#' @param crossed_lower Was it the lower or upper boundary that was crossed
+#'                      if there was early stopping (if not, arg ignored).
+#' @param type Type of p-value ("two-sided", "lower", or "upper")
+#' @export
 #'
 #' @examples
-#' # OBF boundaries
-#' bounds_2 <- get.bound(2, obf=T)
-#' bounds_3 <- get.bound(3, obf=T)
-#' bounds_4 <- get.bound(4, obf=T)
+#' # OBF boundaries in 3-stage trial
+#' bounds <- get.boundaries.design(rates=1:3/3, obf=FALSE)
+#' u_k <- cbind(-bounds, bounds)
+#' n_k <- c(10, 20, 30)
 #'
-#' u_k2 <- cbind(-bounds_2, bounds_2)
-#' u_k3 <- cbind(-bounds_3, bounds_3)
-#' u_k4 <- cbind(-bounds_4, bounds_4)
+#' # Hit the last boundary at the last stage, should be p-value = 0.05
+#' get.pvalue.sw(obs=bounds[3],
+#'               u_k=u_k, k_r=3, n_k=n_k, last_stage=T,
+#'               ancova_monitor=F, ancova_test=F)
 #'
-#' n_k2 <- c(10, 20)
-#' n_k3 <- c(10, 20, 30)
-#' n_k4 <- c(10, 20, 30, 40)
+#' # Switch to using ANCOVA at last stage
+#' get.pvalue.sw(obs=bounds[3],
+#'               u_k=u_k, k_r=3, n_k=n_k, last_stage=T,
+#'               ancova_monitor=F, ancova_test=T, rho=sqrt(0.5))
 #'
-#' get.pvalue.sw(obs=qnorm(0.975),
-#'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
-#'               k_r=1, n_k=c(10), last_stage=T)
-#' # 0.05
-#' get.pvalue.sw(obs=qnorm(0.975), alt=qnorm(0.975),
-#'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
-#'               k_r=1, n_k=c(10), last_stage=T)
-#' # 1
-#' get.pvalue.sw(obs=qnorm(0.975),
-#'               u_k=matrix(c(-qnorm(0.975), qnorm(0.975)), nrow=1),
-#'               k_r=1, n_k=c(10), last_stage=F, rho=0.9)
-#' # 0.029646
-#' get.pvalue.sw(obs=u_k2[2, 1], u_k=u_k2, k_r=2, n_k=n_k2, rho=1.0,
-#'               last_stage=T)
-#' # 0.04999942
-#' get.pvalue.sw(obs=u_k3[3, 1], u_k=u_k3, k_r=3, n_k=n_k3, rho=1,
-#'               last_stage=T)
-#' # 0.05000007
-#' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=1,
-#'               ancova_monitor=F, ancova_test=F, last_stage=T)
-#' # 0.05000162
-#' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=0.1,
-#'               ancova_monitor=F, ancova_test=T, last_stage=T)
-#' # 0.0628575
-#' get.pvalue.sw(obs=-u_k4[4, 1], u_k=u_k4, k_r=4, n_k=n_k4, rho=0.9,
-#'               ancova_monitor=F, ancova_test=T, last_stage=T)
-#' # 0.05320006
-#' get.pvalue.sw(obs=1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
-#'               last_stage=T)
-#' # 0.1355388
-#' get.pvalue.sw(obs=-1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
-#'               last_stage=T)
-#' # 0.1355388
-#' get.pvalue.sw(obs=-1.5, u_k=u_k4, n_k=n_k4, k_r=4, ancova_monitor=F,
-#'               last_stage=T, rho=0.9)
-#' # 0.1380762
-#' get.pvalue.sw(obs=2.35, u_k=matrix(u_k4[1:2,], nrow=2), k_r=2,
-#'               n_k=n_k2, ancova_monitor=F,
-#'               rho=0.8, last_stage=T)
-#' 0.01879755
+#' # What if we had been using corrected boundaries
+#' bounds.c <- get.boundaries.design(rates=1:3/3, obf=FALSE,
+#'                                   rho=sqrt(0.5), change=c(0, 0, 1))
+#' u_k <- cbind(-bounds.c, bounds.c)
+#' get.pvalue.sw(obs=bounds.c[3],
+#'               u_k=u_k, k_r=3, n_k=n_k, last_stage=T,
+#'               ancova_monitor=F, ancova_test=T, rho=sqrt(0.5))
 get.pvalue.sw <- function(obs, u_k, n_k, k_r,
                           alt=0,
                           rho=1,
@@ -442,42 +417,42 @@ search.fun.sw <- function(est, sd_K, u_k, n_k, k_r, alpha,
   return(val)
 }
 
-#' Get p-value using the sample mean ordering.
-#' Needs to take in the obs as a standardized sample mean.
-#'
-#' @param obs Standardized sample mean observation
-#' @param u_K Boundaries for all stages except the last stage K
-#' @param n_K Sample sizes for all stages up through max stage K
-#'            This is needed to compute the variance of the sample mean.
-#' @param type Type of p-value (upper, lower, two-sided)
-#'
-#' @examples
-#' # OBF boundaries
-#' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
-#' u_k1 <- cbind(-u_k, u_k)
-#' u_k2 <- cbind(rep(-Inf, 4), u_k)
-#'
-#' # This gives exactly alpha = 0.05 by putting in the last
-#' # boundary.
-#' n_K <- c(10, 20, 30, 40)
-#'
-#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
-#'               ancova_monitor=F, ancova_test=F, rho=1.0)
-#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
-#'               ancova_monitor=F, ancova_test=T, rho=0)
-#' # 0.05000002
-#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
-#'               ancova_monitor=F, ancova_test=T, rho=0.4)
-#' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
-#'               ancova_monitor=F, ancova_test=T, rho=0.8)
-#' for(i in seq(0.01, 0.9, 0.1)){
-#'     print(get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
-#'               ancova_monitor=F, ancova_test=T, rho=i))
-#' }
-#'
-#'
-#' get.pvalue.sm(obs=-5/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
-#'               ancova_monitor=F, ancova_test=F, rho=1.0)
+# #' Get p-value using the sample mean ordering.
+# #' Needs to take in the obs as a standardized sample mean.
+# #'
+# #' @param obs Standardized sample mean observation
+# #' @param u_K Boundaries for all stages except the last stage K
+# #' @param n_K Sample sizes for all stages up through max stage K
+# #'            This is needed to compute the variance of the sample mean.
+# #' @param type Type of p-value (upper, lower, two-sided)
+# #'
+# #' @examples
+# #' # OBF boundaries
+# #' u_k <- c(4.332634, 2.963132, 2.359044, 2.014090)
+# #' u_k1 <- cbind(-u_k, u_k)
+# #' u_k2 <- cbind(rep(-Inf, 4), u_k)
+# #'
+# #' # This gives exactly alpha = 0.05 by putting in the last
+# #' # boundary.
+# #' n_K <- c(10, 20, 30, 40)
+# #'
+# #' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+# #'               ancova_monitor=F, ancova_test=F, rho=1.0)
+# #' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+# #'               ancova_monitor=F, ancova_test=T, rho=0)
+# #' # 0.05000002
+# #' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+# #'               ancova_monitor=F, ancova_test=T, rho=0.4)
+# #' get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+# #'               ancova_monitor=F, ancova_test=T, rho=0.8)
+# #' for(i in seq(0.01, 0.9, 0.1)){
+# #'     print(get.pvalue.sm(obs=-2.01409/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+# #'               ancova_monitor=F, ancova_test=T, rho=i))
+# #' }
+# #'
+# #'
+# #' get.pvalue.sm(obs=-5/sqrt(40), u_K=u_k1[1:3,], n_K=n_K,
+# #'               ancova_monitor=F, ancova_test=F, rho=1.0)
 get.pvalue.sm <- function(obs, u_K, n_K, rho=1,
                           ancova_monitor=F,
                           ancova_test=F,
@@ -588,19 +563,19 @@ get.pvalue.sm <- function(obs, u_K, n_K, rho=1,
 #' @param k The stage that it was stopped at
 #' @param corr Correlation matrix among the test statistics
 #' @param n_K Sample size through max stage K
-get.pvalue <- function(obs, u_K, k, corr, n_K=c(),
-                       ordering="stage-wise"){
-
-  if(ordering == "sample mean" & length(n_K) == 0){
-    stop("If using the stage-wise ordering, need to give the sample size
-          for all data looks, including those planned at future stages.")
-  }
-
-  if(ordering == "stage-wise"){
-    p <- get.pvalue.sw(obs=obs, u_k=u_K[1:k], corr=corr[1:k, 1:k])
-  } else if(ordering == "sample mean"){
-    p <- get.pvalue.sm(obs=obs, u_K=u_K, corr=corr, n_K=n_K)
-  }
-
-  return(p)
-}
+# get.pvalue <- function(obs, u_K, k, corr, n_K=c(),
+#                        ordering="stage-wise"){
+#
+#   if(ordering == "sample mean" & length(n_K) == 0){
+#     stop("If using the stage-wise ordering, need to give the sample size
+#           for all data looks, including those planned at future stages.")
+#   }
+#
+#   if(ordering == "stage-wise"){
+#     p <- get.pvalue.sw(obs=obs, u_k=u_K[1:k], corr=corr[1:k, 1:k])
+#   } else if(ordering == "sample mean"){
+#     p <- get.pvalue.sm(obs=obs, u_K=u_K, corr=corr, n_K=n_K)
+#   }
+#
+#   return(p)
+# }

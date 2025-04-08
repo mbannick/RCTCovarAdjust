@@ -8,11 +8,12 @@ source("~/repos/RCTCovarAdjust/R/covariance.R")
 # #' @import MASS
 # #' @import mvtnorm
 get.bound.by.corr <- function(corr, obf=FALSE, unequal_type=FALSE,
-                              t_k=NULL,
+                              t_k=NULL, u_k=NULL,
                               power=0.05, algorithm=Miwa(steps=1000)){
   K <- nrow(corr)
   if(length(t_k) != K) stop("Information fractions vector must
                             be same size as correlation matrix.")
+
   bound.func <- function(c){
     if(obf){
       if(!unequal_type){
@@ -28,13 +29,17 @@ get.bound.by.corr <- function(corr, obf=FALSE, unequal_type=FALSE,
     } else {
       u <- rep(c, K)
     }
+
+    if(!is.null(u_k)){
+      u[1:length(u_k)] <- u_k
+    }
     return(u)
   }
   get.power <- function(c){
-    u_k <- bound.func(c)
+    us <- bound.func(c)
 
-    val <- 1 - pmvnorm(lower=-u_k,
-                       upper=u_k,
+    val <- 1 - pmvnorm(lower=-us,
+                       upper=us,
                        mean=rep(0, K), corr=corr,
                        algorithm=algorithm)
     return(val)
@@ -98,7 +103,7 @@ solve.boundary <- function(power, corr=NULL, u_k=NULL,
 #' # ANCOVA at last two stages, R^2 = 0.5
 #' get.boundaries.design(rates=t, obf=TRUE, rho=sqrt(0.5), change=c(1, 0, 0))
 get.boundaries.design <- function(rates, obf, unequal_type=FALSE,
-                                  rho=1, change=0,
+                                  rho=1, change=0, u_k=NULL,
                                   algorithm=Miwa(steps=1000)){
 
   if(length(change) == 1) change <- rep(change, length(rates))
@@ -106,7 +111,7 @@ get.boundaries.design <- function(rates, obf, unequal_type=FALSE,
                                            the same length as the number of stages.")
 
   corr <- corr.mat(rates, rho=rho, mis=as.logical(change))
-  bounds <- get.bound.by.corr(corr, t_k=rates, obf=obf, unequal_type=unequal_type)
+  bounds <- get.bound.by.corr(corr, t_k=rates, obf=obf, unequal_type=unequal_type, u_k=u_k)
   return(bounds)
 }
 
@@ -140,6 +145,8 @@ get.boundaries.design <- function(rates, obf, unequal_type=FALSE,
 get.boundaries.aspend <- function(a.func, rates,
                                   u_k=NULL, rho=1, change=0,
                                   algorithm=Miwa(steps=1000)){
+
+  browser()
 
   # Get sample size increments
   K <- length(rates)

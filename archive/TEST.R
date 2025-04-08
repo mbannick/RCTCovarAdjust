@@ -1,17 +1,9 @@
 rm(list=ls())
 library(data.table)
-library(ggplot2)
 library(magrittr)
 
-args <- commandArgs(TRUE)
-in_dir <- args[1]
-# in_dir <- "~/Documents/FileZilla/rct/run-10-04-22-2/"
-# in_dir <- "~/Documents/FileZilla/rct/run-11-04-22-3/"
-# in_dir <- "~/Documents/FileZilla/rct/run-08-05-22-2/"
-# in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
-# in_dir <- "~/Documents/FileZilla/rct/run-09-05-22-1/"
-# in_dir <- "~/Documents/FileZilla/rct/run-18-04-22-1"
-# in_dir <- "~/Documents/FileZilla/rct/run-16-05-22-2/"
+in_dir1 <- "~/rct/08-25-22-2/figure1"
+in_dir2 <- "~/rct/run-28-05-22-2"
 setwd(in_dir)
 
 files <- list.files(in_dir, ".RData")
@@ -31,11 +23,16 @@ get.results <- function(file){
   truth <- c(parameters[param == param_id, delta])
 
   load(file)
-  power <- mean(result$reject)
-  bias_naive <- mean(result$est - truth)
-  bias_corr <- mean(result$point - truth)
-  bias_naive_med <- median(result$est - truth)
-  bias_corr_med <- median(result$point - truth)
+  power <- mean(unlist(result$reject))
+  bias_naive <- mean(unlist(result$est) - truth)
+  bias_corr <- mean(unlist(result$point) - truth)
+  bias_naive_med <- median(unlist(result$est) - truth)
+  bias_corr_med <- median(unlist(result$point) - truth)
+
+  if(dim(result$naive_ci)[2] > 2){
+    result$naive_ci <- do.call(rbind, result$naive_ci)
+    result$ci <- do.call(rbind, result$ci)
+  }
 
   cover_naive <- mean((result$naive_ci[, 1] <= truth) & (result$naive_ci[, 2] >= truth))
   cover_corr <- mean(result$ci[, 1] <= truth & (result$ci[, 2] >= truth))
